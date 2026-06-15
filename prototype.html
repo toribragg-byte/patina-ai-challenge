@@ -1,0 +1,2256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My House</title>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --bg:      #FFFFFF;
+    --bg2:     #F5F0EB;
+    --bg3:     #EAE0D8;
+    --text:    #2C1F14;
+    --text2:   #6B4C38;
+    --accent:  #9B4D2E;
+    --sage:    #3D6B45;
+    --r:       16px;
+    --r-sm:    10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+  .screen { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+  .screen.active { display: flex; }
+
+  /* Header */
+  .header { display: flex; align-items: center; gap: 10px; padding: 16px 20px 12px; flex-shrink: 0; }
+  .header-title { font-size: 17px; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .icon-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg2); border: none; cursor: pointer; color: var(--text); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .icon-btn:active { opacity: .7; }
+  .back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg2); border: none; cursor: pointer; color: var(--text); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  /* Lucide icons */
+  svg.lucide { display: block; stroke-width: 1.75; }
+  .icon-btn svg.lucide, .back-btn svg.lucide { width: 18px; height: 18px; }
+  .tab-icon svg.lucide { width: 22px; height: 22px; stroke-width: 1.75; }
+  .room-icon svg.lucide { width: 22px; height: 22px; }
+  .add-tile-icon svg.lucide { width: 18px; height: 18px; stroke-width: 2; }
+  .maint-dash-icon svg.lucide { width: 20px; height: 20px; }
+  .alert-row-icon svg.lucide { width: 16px; height: 16px; stroke-width: 2; }
+  .sheet-action svg.lucide { width: 20px; height: 20px; flex-shrink: 0; }
+  .eicon svg.lucide { width: 44px; height: 44px; stroke-width: 1.25; opacity: .35; }
+  .house-header-add-photo svg.lucide { width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; }
+  .chip svg.lucide { width: 13px; height: 13px; vertical-align: middle; margin-right: 3px; }
+
+  /* Home switcher button in header */
+  .home-switcher-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; color: var(--text); padding: 4px 0; flex: 1; min-width: 0; }
+  .home-switcher-btn .home-name { font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+  .home-switcher-btn .chevron-down { color: var(--text2); flex-shrink: 0; display: flex; }
+  .home-switcher-btn .chevron-down svg.lucide { width: 14px; height: 14px; }
+  .home-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 999px; flex-shrink: 0; }
+  .badge-owned  { background: #DFF0E2; color: #3E7048; }
+  .badge-shared { background: #E0EBF5; color: #24639A; }
+
+  /* Scrollable body */
+  .body { flex: 1; overflow-y: auto; padding: 0 20px 90px; }
+
+  /* Bottom tab bar */
+  .tab-bar { display: flex; align-items: stretch; position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; background: rgba(255,255,255,.96); backdrop-filter: blur(16px); border-top: 1px solid var(--bg3); z-index: 50; }
+  .tab-bar.hidden { display: none; }
+  .tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px 0 14px; border: none; background: none; cursor: pointer; color: var(--text2); font-size: 10px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; }
+  .tab-btn:active { opacity: .6; }
+  .tab-btn.active { color: var(--accent); }
+  .tab-icon { display: flex; align-items: center; justify-content: center; }
+  .add-tile-icon { width: 36px; height: 36px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; color: var(--text2); flex-shrink: 0; }
+
+  /* Page title */
+  .page-title { font-size: 32px; font-weight: 700; padding: 4px 20px 20px; letter-spacing: -.5px; }
+
+  /* Section label */
+  .section-label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin: 24px 0 4px; display: flex; align-items: center; gap: 5px; }
+  .section-label svg.lucide { width: 13px; height: 13px; stroke-width: 2; flex-shrink: 0; }
+
+  /* Room card */
+  .room-card { background: var(--bg2); border-radius: var(--r); padding: 18px 16px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 14px; }
+  .room-card:active { opacity: .8; }
+  .room-icon { font-size: 22px; width: 36px; text-align: center; flex-shrink: 0; }
+  .room-card-name { font-size: 17px; font-weight: 600; flex: 1; }
+  .room-chevron { color: var(--text2); font-size: 18px; }
+
+  /* Add tile */
+  .add-tile { background: var(--bg2); border-radius: var(--r); padding: 18px 16px; cursor: pointer; display: flex; align-items: center; gap: 14px; border: 1.5px dashed var(--bg3); }
+  .add-tile:active { opacity: .8; }
+  .add-tile-label { font-size: 16px; font-weight: 500; color: var(--text2); }
+
+  /* House header — open format at top of rooms screen */
+  .house-header { padding: 4px 0 20px; }
+  .house-header-photo-wrap { position: relative; border-radius: var(--r); overflow: hidden; margin-bottom: 14px; }
+  .house-header-photo { width: 100%; height: 200px; object-fit: cover; display: block; }
+  .house-photo-cam { position: absolute; bottom: 10px; right: 10px; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,.55); backdrop-filter: blur(4px); border: 1.5px solid rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; border: none; }
+  .house-header-add-photo { background: none; border: none; color: var(--text2); font-size: 13px; cursor: pointer; padding: 0 0 12px; display: block; }
+  .house-header-add-photo:active { opacity: .6; }
+  .house-header-name { font-size: 26px; font-weight: 700; color: var(--text); letter-spacing: -.3px; }
+  .house-header-address { font-size: 14px; color: var(--text2); margin-top: 4px; }
+  .house-header-details { background: none; border: none; color: var(--accent); font-size: 14px; font-weight: 500; cursor: pointer; padding: 8px 0 0; display: block; }
+  .house-header-details:active { opacity: .7; }
+
+  /* Info sections */
+  .info-section { background: var(--bg2); border-radius: var(--r); overflow: hidden; margin-bottom: 14px; }
+  .info-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 13px 16px; gap: 12px; border-bottom: 1px solid var(--bg3); }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { font-size: 14px; color: var(--text2); flex-shrink: 0; }
+  .info-value { font-size: 14px; font-weight: 500; text-align: right; }
+  .info-value.empty { color: var(--text2); font-style: italic; font-weight: 400; }
+
+  /* Form */
+  .form { padding: 4px 20px 60px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; flex: 1; }
+  #finish-fields { display: flex; flex-direction: column; gap: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+  .field input, .field textarea, .field select {
+    width: 100%; padding: 13px 14px; background: var(--bg2); border: 1.5px solid var(--bg3);
+    border-radius: var(--r-sm); font-size: 15px; font-family: inherit; color: var(--text); outline: none;
+  }
+  .field input::placeholder, .field textarea::placeholder { color: var(--text2); }
+  .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--accent); }
+  .field textarea { resize: none; min-height: 72px; }
+  .field select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237B5748' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  .field select option { background: var(--bg2); }
+  .row { display: flex; gap: 10px; }
+  .row .field { flex: 1; }
+
+  /* Chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 8px 16px; border-radius: 999px; border: 1.5px solid var(--bg3); font-size: 13px; font-weight: 500; cursor: pointer; background: var(--bg2); color: var(--text2); }
+  .chip.on    { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Buttons */
+  .btn { border: none; border-radius: var(--r-sm); padding: 14px 20px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-ghost { background: var(--bg3); color: var(--text); font-size: 17px; }
+  .btn-danger { background: transparent; color: #B53A2F; border: 1.5px solid #E8C8C5; }
+
+  /* Finish cards on room detail */
+  .swatch { width: 52px; height: 68px; border-radius: 4px 4px 12px 12px; background: #888; box-shadow: 0 2px 8px rgba(0,0,0,.4); flex-shrink: 0; }
+  .paint-grid { display: flex; flex-direction: column; gap: 10px; }
+  .paint-card { background: var(--bg2); border-radius: var(--r); padding: 14px 16px; cursor: pointer; display: flex; align-items: center; gap: 16px; }
+  .paint-card:active { opacity: .8; }
+  .paint-info { flex: 1; min-width: 0; }
+  .paint-name { font-size: 15px; font-weight: 600; color: var(--text); }
+  .paint-sub  { font-size: 13px; color: var(--text2); margin-top: 3px; }
+  .paint-sku  { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .finish-card { background: var(--bg2); border-radius: var(--r); padding: 16px; margin-bottom: 10px; cursor: pointer; }
+  .finish-card:active { opacity: .8; }
+  .finish-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .finish-type-label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; }
+  .fbadge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; }
+  .fbadge-in  { background: #DFF0E2; color: #3E7048; }
+  .fbadge-out { background: #F5E0DE; color: #B53A2F; }
+  .fbadge-unk { background: var(--bg3); color: var(--text2); }
+  .finish-name { font-size: 16px; font-weight: 600; color: var(--text); }
+  .finish-sub  { font-size: 13px; color: var(--text2); margin-top: 3px; }
+  .finish-sku  { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .buy-btn { display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--bg3); border: 1.5px solid var(--bg3); border-radius: 10px; padding: 10px; text-decoration: none; margin-top: 10px; }
+  .buy-btn span { font-size: 14px; font-weight: 600; color: var(--accent); display: flex; align-items: center; gap: 5px; }
+  .buy-btn span svg.lucide { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* Maintenance attachments */
+  .attach-zone { border: 1.5px dashed var(--bg3); border-radius: var(--r-sm); background: var(--bg2); cursor: pointer; overflow: hidden; }
+  .attach-zone:active { background: var(--bg3); }
+  .attach-empty { display: flex; align-items: center; gap: 10px; padding: 14px 16px; color: var(--text2); font-size: 14px; }
+  .attach-empty svg.lucide { width: 18px; height: 18px; flex-shrink: 0; color: var(--accent); }
+  .attach-preview { padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+  .attach-preview img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+  .attach-pdf-icon { width: 52px; height: 52px; border-radius: 8px; background: rgba(181,58,47,.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .attach-pdf-icon svg.lucide { width: 24px; height: 24px; color: #B53A2F; }
+  .attach-info { flex: 1; min-width: 0; }
+  .attach-filename { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .attach-filemeta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .attach-remove { background: none; border: none; color: var(--text2); cursor: pointer; padding: 4px; opacity: .6; flex-shrink: 0; }
+  .attach-remove:active { opacity: 1; }
+  .attach-remove svg.lucide { width: 16px; height: 16px; display: block; }
+  .maint-attach-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--accent); background: rgba(155,77,46,.1); border-radius: 6px; padding: 3px 8px; margin-top: 6px; cursor: pointer; text-decoration: none; }
+  .maint-attach-chip svg.lucide { width: 12px; height: 12px; }
+
+  /* Settings / Profile */
+  .profile-card { display: flex; align-items: center; gap: 16px; background: var(--bg2); border-radius: var(--r); padding: 18px 16px; margin-bottom: 8px; }
+  .avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #fff; flex-shrink: 0; letter-spacing: .02em; }
+  .profile-name { font-size: 17px; font-weight: 700; color: var(--text); }
+  .profile-email { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .settings-section { margin-bottom: 8px; }
+  .settings-section-title { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .07em; padding: 16px 0 6px; }
+  .settings-rows { background: var(--bg2); border-radius: var(--r); overflow: hidden; }
+  .settings-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--bg3); cursor: pointer; }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row:active { background: var(--bg3); }
+  .settings-row-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .settings-row-icon svg.lucide { width: 16px; height: 16px; stroke-width: 2; }
+  .settings-row-body { flex: 1; min-width: 0; }
+  .settings-row-label { font-size: 15px; font-weight: 500; color: var(--text); }
+  .settings-row-sub { font-size: 13px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .settings-row-end { display: flex; align-items: center; gap: 6px; flex-shrink: 0; color: var(--text2); font-size: 13px; }
+  .settings-row-end svg.lucide { width: 14px; height: 14px; opacity: .4; }
+  .settings-person-list { background: var(--bg2); border-radius: var(--r); overflow: hidden; }
+  .settings-person { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--bg3); }
+  .settings-person:last-child { border-bottom: none; }
+  .person-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--text2); flex-shrink: 0; }
+  .person-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .person-detail { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .person-remove { background: none; border: none; color: var(--text2); cursor: pointer; padding: 4px; opacity: .6; }
+  .person-remove:active { opacity: 1; }
+  .person-remove svg.lucide { width: 16px; height: 16px; display: block; }
+  .settings-add-row { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--bg2); border-radius: var(--r); margin-top: 6px; cursor: pointer; color: var(--accent); font-size: 14px; font-weight: 600; border: 1.5px dashed var(--bg3); }
+  .settings-add-row svg.lucide { width: 16px; height: 16px; }
+  .toggle-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg2); border-radius: var(--r); }
+  .toggle-label { flex: 1; font-size: 15px; font-weight: 500; color: var(--text); }
+  .toggle-sub { font-size: 13px; color: var(--text2); margin-top: 1px; }
+  .toggle { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-track { position: absolute; inset: 0; border-radius: 13px; background: var(--bg3); transition: background .2s; cursor: pointer; }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2); transition: transform .2s; pointer-events: none; }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
+  .signout-btn { width: 100%; background: none; border: 1.5px solid rgba(181,58,47,.3); border-radius: var(--r); padding: 14px; font-size: 15px; font-weight: 600; color: #B53A2F; cursor: pointer; margin-top: 8px; }
+  .signout-btn:active { background: rgba(181,58,47,.06); }
+
+  /* Archived finishes */
+  .archive-toggle { background: none; border: none; color: var(--text2); font-size: 13px; font-weight: 500; cursor: pointer; padding: 8px 0; display: flex; align-items: center; gap: 6px; }
+  .archive-toggle:active { opacity: .6; }
+  .archived-finish-card { background: var(--bg2); border-radius: var(--r); padding: 14px 16px; margin-bottom: 8px; cursor: pointer; opacity: .5; border: 1px dashed var(--bg3); }
+  .archived-finish-card:active { opacity: .35; }
+  .archived-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+  .archived-date { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  /* Upkeep alert card on home tab */
+  .alert-card { background: var(--bg2); border-radius: var(--r); padding: 16px; margin-bottom: 20px; border-left: 3px solid var(--accent); }
+  .alert-card-title { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; display: flex; align-items: center; gap: 5px; }
+  .alert-card-title svg.lucide { width: 12px; height: 12px; flex-shrink: 0; }
+  .alert-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--bg3); cursor: pointer; }
+  .alert-row:active { opacity: .7; }
+  .alert-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .alert-row-icon { font-size: 16px; width: 24px; text-align: center; flex-shrink: 0; }
+  .alert-row-desc { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .alert-row-badge { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap; flex-shrink: 0; }
+  .alert-row-badge.overdue { background: rgba(181,58,47,.14); color: #B53A2F; }
+  .alert-row-badge.soon    { background: rgba(155,77,46,.14); color: var(--accent); }
+  .alert-card-more { margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; }
+
+  /* Dashboard section headers */
+  .dash-section { margin-bottom: 6px; }
+  .dash-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .dash-section-title { font-size: 13px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; }
+  .dash-section-action { font-size: 13px; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; padding: 0; }
+  .dash-section-action:active { opacity: .6; }
+
+  /* Maintenance dashboard cards */
+  .maint-empty { text-align: center; color: var(--text2); padding: 20px 0 4px; font-size: 14px; }
+  .maint-dash-card { background: var(--bg2); border-radius: var(--r); padding: 14px 16px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 14px; }
+  .maint-dash-card:active { opacity: .7; }
+  .maint-dash-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .maint-dash-body { flex: 1; min-width: 0; }
+  .maint-dash-desc { font-size: 15px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .maint-dash-cat { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .maint-dash-right { text-align: right; flex-shrink: 0; }
+  .maint-dash-due { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+  .maint-dash-due.overdue { background: rgba(181,58,47,.14); color: #B53A2F; }
+  .maint-dash-due.soon { background: rgba(155,77,46,.14); color: var(--accent); }
+  .maint-dash-due.ok { background: var(--bg3); color: var(--text2); }
+  .maint-dash-due.none { background: var(--bg3); color: var(--text2); }
+
+  /* Maintenance log full-screen */
+  .maint-card { background: var(--bg2); border-radius: var(--r); padding: 16px; margin-bottom: 12px; cursor: pointer; }
+  .maint-card:active { opacity: .7; }
+  .maint-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .maint-cat { background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; }
+  .maint-date-text { font-size: 12px; color: var(--text2); }
+  .maint-desc { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .maint-meta { font-size: 13px; color: var(--text2); line-height: 1.5; margin-top: 5px; }
+  .maint-dates-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .maint-last { font-size: 12px; color: var(--text2); }
+  .maint-cost-inline { font-size: 12px; color: var(--text2); }
+
+  /* Empty */
+  .empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text2); padding: 60px 40px; text-align: center; gap: 10px; }
+  .eicon { display: flex; align-items: center; justify-content: center; }
+  .empty p { font-size: 14px; line-height: 1.6; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--bg3); color: var(--text); padding: 10px 20px; border-radius: 999px; font-size: 14px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 200; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+
+  /* Sheets */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100; align-items: flex-end; justify-content: center; }
+  .overlay.open { display: flex; }
+  .sheet { background: var(--bg2); border-radius: 20px 20px 0 0; padding: 12px 0 40px; width: 100%; max-width: 480px; }
+  .sheet-handle { width: 36px; height: 4px; background: var(--bg3); border-radius: 2px; margin: 0 auto 16px; }
+  .sheet-title { font-size: 13px; font-weight: 500; color: var(--text2); text-align: center; margin-bottom: 8px; padding: 0 20px; }
+  .sheet-action { display: flex; align-items: center; gap: 14px; padding: 16px 20px; cursor: pointer; font-size: 17px; font-weight: 500; color: var(--text); border: none; background: none; width: 100%; text-align: left; }
+  .sheet-action:active { background: var(--bg3); }
+  .sheet-action.danger { color: #B53A2F; }
+  .sheet-divider { height: 1px; background: var(--bg3); }
+  .sheet-cancel { display: block; margin: 8px 16px 0; width: calc(100% - 32px); padding: 16px; background: var(--bg3); border: none; border-radius: var(--r-sm); color: var(--text); font-size: 17px; font-weight: 600; cursor: pointer; text-align: center; }
+
+  /* Home switcher sheet items */
+  .home-option { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; border: none; background: none; width: 100%; text-align: left; }
+  .home-option:active { background: var(--bg3); }
+  .home-option-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .home-option-body { flex: 1; min-width: 0; }
+  .home-option-name { font-size: 16px; font-weight: 600; color: var(--text); }
+  .home-option-addr { font-size: 13px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .home-option-check { color: var(--accent); font-size: 18px; }
+
+  /* Room photo card */
+  .room-card-photo { border-radius: var(--r); margin-bottom: 10px; cursor: pointer; overflow: hidden; position: relative; height: 140px; background: var(--bg2); }
+  .room-card-photo:active { opacity: .85; }
+  .room-card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .room-card-photo-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.7) 0%, rgba(0,0,0,.1) 50%, transparent 100%); }
+  .room-card-photo-label { position: absolute; bottom: 14px; left: 16px; right: 16px; display: flex; align-items: flex-end; justify-content: space-between; }
+  .room-card-photo-name { font-size: 17px; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  .room-card-photo-type { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 2px; }
+
+  /* Room hero on detail screen */
+  .room-hero { position: relative; height: 200px; background: var(--bg2); flex-shrink: 0; }
+  .room-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .room-hero-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; opacity: .3; }
+  .room-hero-placeholder svg.lucide { width: 52px; height: 52px; stroke-width: 1.25; }
+  .room-hero-cam { position: absolute; bottom: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,.55); backdrop-filter: blur(4px); border: 1.5px solid rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; }
+  .room-hero-cam svg.lucide, .house-photo-cam svg.lucide { width: 16px; height: 16px; stroke-width: 2; }
+
+  /* Confirm sheet */
+  .confirm-body { padding: 16px 20px 4px; }
+  .confirm-body h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .confirm-body p  { font-size: 14px; color: var(--text2); margin-bottom: 20px; }
+  .confirm-btns { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Rooms list ─────────────────────────── -->
+  <div class="screen active" id="s-rooms">
+    <div class="header">
+      <button class="home-switcher-btn" id="btn-switch-home">
+        <span class="home-name" id="header-home-name">My Home</span>
+        <span class="chevron-down"><i data-lucide="chevron-down"></i></span>
+      </button>
+      <span class="home-badge" id="header-home-badge"></span>
+      <button class="icon-btn" id="btn-home-menu" title="Home options"><i data-lucide="more-horizontal"></i></button>
+    </div>
+    <div class="body" id="rooms-body"></div>
+  </div>
+
+  <!-- ── Upkeep tab ───────────────────────────── -->
+  <div class="screen" id="s-upkeep">
+    <div class="header">
+      <button class="home-switcher-btn" id="btn-switch-home-upkeep">
+        <span class="home-name" id="header-home-name-upkeep">My Home</span>
+        <span class="chevron-down"><i data-lucide="chevron-down"></i></span>
+      </button>
+      <span class="home-badge" id="header-home-badge-upkeep"></span>
+      <button class="icon-btn" id="btn-add-maint-header" title="Add record"><i data-lucide="plus"></i></button>
+    </div>
+    <div class="body" id="upkeep-body"></div>
+  </div>
+
+  <!-- ── Decor tab ────────────────────────────── -->
+  <div class="screen" id="s-decor">
+    <div class="header">
+      <button class="home-switcher-btn" id="btn-switch-home-decor">
+        <span class="home-name" id="header-home-name-decor">My Home</span>
+        <span class="chevron-down"><i data-lucide="chevron-down"></i></span>
+      </button>
+      <span class="home-badge" id="header-home-badge-decor"></span>
+      <button class="icon-btn" id="btn-add-room-header" title="Add room"><i data-lucide="plus"></i></button>
+    </div>
+    <div class="body" id="decor-body"></div>
+  </div>
+
+  <!-- ── Add / edit room ────────────────────── -->
+  <div class="screen" id="s-add-room">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-add-room"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title" id="add-room-title">New Room</span>
+    </div>
+    <div class="form">
+      <div class="field"><label>Room name *</label><input type="text" id="room-name" placeholder="e.g. Primary Bedroom"></div>
+      <div class="field"><label>Room type</label><input type="text" id="room-type" placeholder="e.g. Bedroom, Kitchen, Bathroom"></div>
+      <div class="field"><label>Notes</label><textarea id="room-notes" placeholder="Anything worth remembering…"></textarea></div>
+      <button class="btn btn-primary" id="save-room-btn">Save Room</button>
+    </div>
+  </div>
+
+  <!-- ── Room detail ────────────────────────── -->
+  <div class="screen" id="s-room">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-room"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title" id="room-detail-name"></span>
+      <button class="icon-btn" id="btn-room-menu"><i data-lucide="more-horizontal"></i></button>
+      <button class="icon-btn" id="btn-add-finish"><i data-lucide="plus"></i></button>
+    </div>
+    <div class="room-hero" id="room-hero">
+      <div class="room-hero-placeholder" id="room-hero-placeholder"><i data-lucide="house"></i></div>
+      <div class="room-hero-cam" id="room-hero-cam" title="Change photo"><i data-lucide="camera"></i></div>
+    </div>
+    <div class="body" id="finishes-body"></div>
+  </div>
+
+  <!-- ── Finish detail (read-only) ─────────── -->
+  <div class="screen" id="s-finish-detail">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-finish-detail"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title" id="finish-detail-title">Finish</span>
+      <button class="icon-btn" id="btn-finish-detail-menu" aria-label="Options"><i data-lucide="more-horizontal"></i></button>
+    </div>
+    <div class="body" id="finish-detail-body"></div>
+  </div>
+
+  <!-- ── Add / edit finish ──────────────────── -->
+  <div class="screen" id="s-add-finish">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-finish"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title" id="add-finish-title">Add Finish</span>
+    </div>
+    <div class="form" id="finish-form">
+      <div class="field"><label>Type</label><div class="chips" id="type-chips"></div></div>
+      <div id="finish-fields"></div>
+      <button class="btn btn-primary" id="save-finish-btn" style="margin-top:6px">Save Finish</button>
+      <button class="btn btn-danger" id="delete-finish-btn" style="display:none;margin-top:8px">Delete Finish</button>
+    </div>
+  </div>
+
+  <!-- ── House info (view) ──────────────────── -->
+  <div class="screen" id="s-house-info">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-house-info"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title" id="house-info-title">House Info</span>
+      <button class="icon-btn" id="btn-edit-house-info"><i data-lucide="pencil"></i></button>
+    </div>
+    <div class="body" id="house-info-body"></div>
+  </div>
+
+  <!-- ── Edit house info ────────────────────── -->
+  <div class="screen" id="s-edit-house">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-edit-house"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title">Edit House Info</span>
+    </div>
+    <div class="form">
+      <div class="section-label" style="margin-top:4px">Basic Info</div>
+      <div class="field"><label>Address</label><input type="text" id="h-address" placeholder="123 Main St, Anytown, ST 12345"></div>
+      <div class="field"><label>Home nickname</label><input type="text" id="h-name" placeholder="e.g. The Lake House"></div>
+      <div class="field"><label>Home type</label>
+        <select id="h-type">
+          <option value="">Select…</option>
+          <option>Single Family</option><option>Condo</option><option>Townhouse</option>
+          <option>Multi-Family</option><option>Other</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field"><label>Year built</label><input type="number" id="h-year" placeholder="e.g. 1998"></div>
+        <div class="field"><label>Sq ft</label><input type="number" id="h-sqft" placeholder="e.g. 2400"></div>
+      </div>
+      <div class="field"><label>Lot size</label><input type="text" id="h-lot" placeholder="e.g. 0.35 acres"></div>
+
+      <div class="section-label">Systems</div>
+      <div class="row">
+        <div class="field"><label>Roof material</label><input type="text" id="h-roof-mat" placeholder="e.g. Architectural shingle"></div>
+        <div class="field"><label>Roof age (yrs)</label><input type="number" id="h-roof-age" placeholder="e.g. 8"></div>
+      </div>
+      <div class="field"><label>HVAC details</label><input type="text" id="h-hvac" placeholder="e.g. Carrier 2-zone, replaced 2019"></div>
+      <div class="field"><label>Water heater</label><input type="text" id="h-water-heater" placeholder="e.g. 50 gal gas, 2021"></div>
+      <div class="field"><label>Septic or sewer</label>
+        <select id="h-septic">
+          <option value="">Select…</option>
+          <option>Municipal sewer</option><option>Septic</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field"><label>Well age (yrs)</label><input type="number" id="h-well-age" placeholder="—"></div>
+        <div class="field"><label>Well pump type</label><input type="text" id="h-well-pump" placeholder="e.g. Submersible"></div>
+      </div>
+
+      <div class="section-label">Utilities & HOA</div>
+      <div class="field"><label>Electric provider</label><input type="text" id="h-electric" placeholder="e.g. Eversource"></div>
+      <div class="field"><label>Gas provider</label><input type="text" id="h-gas" placeholder="e.g. National Grid"></div>
+      <div class="field"><label>Internet provider</label><input type="text" id="h-internet" placeholder="e.g. Comcast 500Mbps"></div>
+      <div class="field"><label>HOA details</label><input type="text" id="h-hoa" placeholder="e.g. $250/mo, managed by FirstService"></div>
+
+      <div class="section-label">Notes</div>
+      <div class="field"><textarea id="h-notes" placeholder="Anything else worth knowing about this home…"></textarea></div>
+
+      <button class="btn btn-primary" id="save-house-btn">Save</button>
+    </div>
+  </div>
+
+  <!-- ── Maintenance log ───────────────────── -->
+  <div class="screen" id="s-maintenance">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-maintenance"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title">Maintenance Log</span>
+      <button class="icon-btn" id="btn-add-maintenance"><i data-lucide="plus"></i></button>
+    </div>
+    <div class="body" id="maintenance-body"></div>
+  </div>
+
+  <!-- ── Add / edit maintenance record ─────── -->
+  <div class="screen" id="s-add-maintenance">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-add-maintenance"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title" id="add-maintenance-title">New Record</span>
+    </div>
+    <div class="form">
+      <div class="field">
+        <label>Category</label>
+        <div class="chips" id="maint-category-chips"></div>
+      </div>
+      <div class="field"><label>Description *</label><textarea id="m-desc" placeholder="What was done?"></textarea></div>
+      <div class="row">
+        <div class="field"><label>Date performed *</label><input type="date" id="m-date"></div>
+        <div class="field"><label>Cost</label><input type="number" id="m-cost" placeholder="0.00"></div>
+      </div>
+      <div class="section-label">Service Provider</div>
+      <div class="row">
+        <div class="field"><label>Company name</label><input type="text" id="m-provider" placeholder="e.g. Roto-Rooter"></div>
+        <div class="field"><label>Contact / phone</label><input type="text" id="m-contact" placeholder="e.g. (603) 555-0100"></div>
+      </div>
+      <div class="section-label">Product Used</div>
+      <div class="row">
+        <div class="field"><label>Brand</label><input type="text" id="m-prod-brand" placeholder="e.g. Filtrete"></div>
+        <div class="field"><label>Model / part #</label><input type="text" id="m-prod-model" placeholder="e.g. MPR 1500"></div>
+      </div>
+      <div class="field"><label>Where to buy</label><input type="url" id="m-prod-url" placeholder="https://…"></div>
+      <div class="field"><label>Next service date</label><input type="date" id="m-next-date"></div>
+      <div class="field"><label>Notes</label><textarea id="m-notes" placeholder="Any additional details…"></textarea></div>
+      <div class="field">
+        <label>Attachment <span style="font-weight:400;color:var(--text2)">(photo or PDF)</span></label>
+        <div class="attach-zone" id="attach-zone">
+          <div class="attach-empty" id="attach-empty">
+            <i data-lucide="paperclip"></i>
+            <span>Tap to attach a photo or PDF</span>
+          </div>
+          <div class="attach-preview" id="attach-preview" style="display:none"></div>
+        </div>
+        <input type="file" id="m-attachment-input" accept="image/*,.pdf" style="display:none">
+      </div>
+      <button class="btn btn-primary" id="save-maintenance-btn" style="margin-top:12px">Save Record</button>
+      <button class="btn btn-danger" id="delete-maintenance-btn" style="display:none;margin-top:8px">Delete Record</button>
+    </div>
+  </div>
+
+  <!-- ── Add new home ───────────────────────── -->
+  <div class="screen" id="s-add-home">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-add-home"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title">Add a Home</span>
+    </div>
+    <div class="form">
+      <div class="field"><label>Address *</label><input type="text" id="nh-address" placeholder="123 Main St, Anytown, ST 12345"></div>
+      <div class="field"><label>Home nickname</label><input type="text" id="nh-name" placeholder="e.g. The Beach House"></div>
+      <div class="field"><label>Home type</label>
+        <select id="nh-type">
+          <option value="">Select…</option>
+          <option>Single Family</option><option>Condo</option><option>Townhouse</option>
+          <option>Multi-Family</option><option>Other</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="save-new-home-btn">Add Home</button>
+      <div style="text-align:center;margin-top:8px">
+        <button id="btn-load-demo" style="background:none;border:none;color:var(--text2);font-size:14px;cursor:pointer;text-decoration:underline;padding:8px">
+          Load a shared home (demo)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Settings screen ──────────────────────── -->
+  <div class="screen" id="s-settings">
+    <div class="header">
+      <span class="header-title">Account</span>
+    </div>
+    <div class="body" id="settings-body"></div>
+  </div>
+
+  <!-- ── Edit profile screen ───────────────────── -->
+  <div class="screen" id="s-edit-profile">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-edit-profile"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title">Edit Profile</span>
+    </div>
+    <div class="form">
+      <div class="field"><label>Full name</label><input id="prof-name" type="text" placeholder="Your name"></div>
+      <div class="field"><label>Email</label><input id="prof-email" type="email" placeholder="you@email.com"></div>
+      <button class="btn btn-primary" id="save-profile-btn">Save</button>
+    </div>
+  </div>
+
+  <!-- ── Tab bar ──────────────────────────────── -->
+  <nav class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" data-tab="s-rooms" id="tab-home">
+      <span class="tab-icon"><i data-lucide="house"></i></span>
+      <span>Home</span>
+    </button>
+    <button class="tab-btn" data-tab="s-upkeep" id="tab-upkeep">
+      <span class="tab-icon"><i data-lucide="wrench"></i></span>
+      <span>Upkeep</span>
+    </button>
+    <button class="tab-btn" data-tab="s-decor" id="tab-decor">
+      <span class="tab-icon"><i data-lucide="paintbrush"></i></span>
+      <span>Decor</span>
+    </button>
+    <button class="tab-btn" data-tab="s-settings" id="tab-settings">
+      <span class="tab-icon"><i data-lucide="user"></i></span>
+      <span>Account</span>
+    </button>
+  </nav>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Home switcher sheet -->
+<div class="overlay" id="home-switcher-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">My Homes</div>
+    <div id="home-options-list"></div>
+    <div class="sheet-divider" style="margin:4px 0"></div>
+    <button class="sheet-action" id="btn-goto-add-home"><i data-lucide="plus"></i> &nbsp;Add a home</button>
+    <button class="sheet-cancel" id="home-switcher-cancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Home menu sheet -->
+<div class="overlay" id="home-menu-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="home-menu-label"></div>
+    <button class="sheet-action" id="sheet-claim-home" style="display:none"><i data-lucide="copy"></i> &nbsp;Duplicate home</button>
+    <div class="sheet-divider" id="sheet-claim-divider" style="display:none"></div>
+    <button class="sheet-action danger" id="sheet-delete-home"><i data-lucide="trash-2"></i> &nbsp;Remove this home</button>
+    <button class="sheet-cancel" id="home-menu-cancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Room menu sheet -->
+<div class="overlay" id="room-menu-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="room-menu-title"></div>
+    <button class="sheet-action" id="sheet-change-photo"><i data-lucide="camera"></i> &nbsp;Change photo</button>
+    <div class="sheet-divider"></div>
+    <button class="sheet-action" id="sheet-edit-room"><i data-lucide="pencil"></i> &nbsp;Edit room</button>
+    <div class="sheet-divider"></div>
+    <button class="sheet-action danger" id="sheet-delete-room"><i data-lucide="trash-2"></i> &nbsp;Delete room</button>
+    <button class="sheet-cancel" id="room-menu-cancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Finish action sheet -->
+<div class="overlay" id="finish-action-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="finish-action-title"></div>
+    <button class="sheet-action" id="sheet-edit-finish"><i data-lucide="pencil"></i> &nbsp;Edit finish</button>
+    <div class="sheet-divider"></div>
+    <button class="sheet-action" id="sheet-archive-finish"><i data-lucide="archive"></i> &nbsp;Archive finish</button>
+    <div class="sheet-divider"></div>
+    <button class="sheet-action danger" id="sheet-delete-finish"><i data-lucide="trash-2"></i> &nbsp;Delete finish</button>
+    <button class="sheet-cancel" id="finish-action-cancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Archived finish action sheet -->
+<div class="overlay" id="archived-action-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="archived-action-title"></div>
+    <button class="sheet-action" id="sheet-restore-finish"><i data-lucide="rotate-ccw"></i> &nbsp;Restore finish</button>
+    <div class="sheet-divider"></div>
+    <button class="sheet-action danger" id="sheet-delete-archived"><i data-lucide="trash-2"></i> &nbsp;Delete permanently</button>
+    <button class="sheet-cancel" id="archived-action-cancel">Cancel</button>
+  </div>
+</div>
+
+<!-- Confirm sheet -->
+<div class="overlay" id="confirm-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="confirm-body">
+      <h3 id="confirm-title"></h3>
+      <p id="confirm-body-text"></p>
+    </div>
+    <div class="confirm-btns">
+      <button class="btn btn-danger" id="confirm-ok">Delete</button>
+      <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add person sheet -->
+<div class="overlay" id="add-person-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="add-person-title">Add Admin</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.4;padding:0 20px 12px;text-align:center" id="add-person-sub"></div>
+    <div style="padding:0 16px;display:flex;flex-direction:column;gap:12px">
+      <div class="field" id="add-person-home" style="display:none;margin:0">
+        <label>Home</label>
+        <select id="add-person-home-select" style="width:100%;padding:12px 14px;border:1.5px solid var(--bg3);border-radius:var(--r-sm);background:var(--bg2);font-size:15px;color:var(--text)"></select>
+      </div>
+      <input id="add-person-name" type="text" placeholder="Full name" style="width:100%;padding:12px 14px;border:1.5px solid var(--bg3);border-radius:var(--r-sm);background:var(--bg2);font-size:15px;color:var(--text);box-sizing:border-box">
+      <input id="add-person-email" type="email" placeholder="Email address" style="width:100%;padding:12px 14px;border:1.5px solid var(--bg3);border-radius:var(--r-sm);background:var(--bg2);font-size:15px;color:var(--text);box-sizing:border-box">
+    </div>
+    <div style="padding:12px 16px 0"><button class="btn btn-primary" id="save-add-person-btn">Add</button></div>
+    <button class="sheet-cancel" id="add-person-cancel">Cancel</button>
+  </div>
+</div>
+
+<script>
+// ── Storage ───────────────────────────────────────────────────────────────────
+function load() {
+  try { return JSON.parse(localStorage.getItem("myhouse2") || "null") || newStore(); }
+  catch(e) { return newStore(); }
+}
+function save(d) { localStorage.setItem("myhouse2", JSON.stringify(d)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function newStore() { return { homes: [], rooms: [], finishes: [], maintenance: [], activeHomeId: null, profile: { name: "", email: "" }, admins: [], shared: [], prefs: { notifications: true, theme: "warm" } }; }
+function ensureSettings(d) {
+  if (!d.profile) d.profile = { name: "", email: "" };
+  if (!d.admins)  d.admins  = [];
+  if (!d.shared)  d.shared  = [];
+  if (!d.prefs)   d.prefs   = { notifications: true, theme: "warm" };
+  return d;
+}
+
+// ── Photo upload ──────────────────────────────────────────────────────────────
+// Compress an image File to a JPEG data URL at max 900px wide
+function compressImage(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 900;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        const canvas = document.createElement("canvas");
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.75));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// Hidden file input — reused for all room photo uploads
+const _photoInput = document.createElement("input");
+_photoInput.type = "file"; _photoInput.accept = "image/*"; _photoInput.style.display = "none";
+document.body.appendChild(_photoInput);
+
+const HOUSE_PHOTOS = [
+  "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=900&q=80&fit=crop",
+  "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=900&q=80&fit=crop",
+  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&q=80&fit=crop",
+  "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&q=80&fit=crop",
+  "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=900&q=80&fit=crop",
+  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=900&q=80&fit=crop",
+];
+function randomHousePhoto() {
+  return HOUSE_PHOTOS[Math.floor(Math.random() * HOUSE_PHOTOS.length)];
+}
+
+function pickHomePhoto() {
+  _photoInput.onchange = async () => {
+    const file = _photoInput.files[0];
+    if (!file) return;
+    toast("Uploading…");
+    const dataUrl = await compressImage(file);
+    const d = load();
+    const h = d.homes.find(h => h.id === currentHomeId);
+    if (h) { h.photo = dataUrl; save(d); }
+    if (activeTab === "s-rooms") renderRoomsScreen();
+    _photoInput.value = "";
+  };
+  _photoInput.click();
+}
+
+function pickRoomPhoto(roomId) {
+  _photoInput.onchange = async () => {
+    const file = _photoInput.files[0];
+    if (!file) return;
+    toast("Uploading…");
+    const dataUrl = await compressImage(file);
+    const d = load();
+    const r = d.rooms.find(r => r.id === roomId);
+    if (r) { r.photo = dataUrl; save(d); }
+    renderRoomsScreen();
+    renderFinishes();
+    _photoInput.value = "";
+  };
+  _photoInput.click();
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let navStack = ["s-rooms"];
+let currentHomeId  = null;
+let currentRoomId  = null;
+let editingRoomId  = null;
+let editingFinishId = null;
+let tappedFinishId = null;
+let selType  = "paint";
+let selStock = "unknown";
+let selMaterial = "";
+let archiveOpen = false;
+let _formValues = {};
+
+// ── Tab bar ───────────────────────────────────────────────────────────────────
+const TAB_ROOTS = new Set(["s-rooms", "s-upkeep", "s-decor", "s-settings"]);
+
+function setTabBar(screenId) {
+  const bar = document.getElementById("tab-bar");
+  if (TAB_ROOTS.has(screenId)) {
+    bar.classList.remove("hidden");
+    document.querySelectorAll(".tab-btn").forEach(b =>
+      b.classList.toggle("active", b.dataset.tab === screenId));
+  } else {
+    bar.classList.add("hidden");
+  }
+}
+
+let activeTab = "s-rooms"; // tracks which tab we're on for back() to return to
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+});
+
+function switchTab(id) {
+  activeTab = id;
+  navStack = [id];
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  setTabBar(id);
+  if (id === "s-rooms")    { renderRoomsScreen(); }
+  if (id === "s-upkeep")   { renderUpkeepTab(); }
+  if (id === "s-decor")    { renderDecorTab(); }
+  if (id === "s-settings") { renderSettingsTab(); }
+  // Sync all header home names/badges
+  updateHomeHeader();
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────────────
+function go(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  setTabBar(id);
+  if (navStack[navStack.length-1] !== id) navStack.push(id);
+}
+function back() {
+  navStack.pop();
+  const prev = navStack[navStack.length-1] || activeTab;
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(prev).classList.add("active");
+  setTabBar(prev);
+  if (prev === "s-rooms")       { renderRoomsScreen(); }
+  if (prev === "s-upkeep")      { renderUpkeepTab(); }
+  if (prev === "s-decor")       { renderDecorTab(); }
+  if (prev === "s-room")        { renderFinishes(); }
+  if (prev === "s-house-info")  { renderHouseInfo(); }
+  if (prev === "s-maintenance") { renderMaintenance(); }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+// ── Sheets ────────────────────────────────────────────────────────────────────
+function openSheet(id) { document.getElementById(id).classList.add("open"); }
+function closeAllSheets() { document.querySelectorAll(".overlay").forEach(o => o.classList.remove("open")); }
+document.querySelectorAll(".overlay").forEach(o => o.addEventListener("click", e => { if (e.target === o) closeAllSheets(); }));
+
+let _confirmFn = null;
+function confirm(title, body, fn, label) {
+  document.getElementById("confirm-title").textContent = title;
+  document.getElementById("confirm-body-text").textContent = body;
+  document.getElementById("confirm-ok").textContent = label || "Delete";
+  _confirmFn = fn;
+  openSheet("confirm-sheet");
+}
+document.getElementById("confirm-ok").addEventListener("click", () => { closeAllSheets(); _confirmFn && _confirmFn(); });
+document.getElementById("confirm-cancel").addEventListener("click", () => closeAllSheets());
+
+// ── Homes ─────────────────────────────────────────────────────────────────────
+function currentHome() {
+  const d = load();
+  return d.homes.find(h => h.id === currentHomeId) || null;
+}
+
+function homeName(h) { return h.nickname || h.address || "Home"; }
+
+function updateHomeHeader() {
+  const h = currentHome();
+  if (!h) return;
+  const label = homeName(h);
+  const badgeTxt = h.shared ? "Shared" : "Owned";
+  const badgeCls = "home-badge " + (h.shared ? "badge-shared" : "badge-owned");
+  ["", "-upkeep", "-decor"].forEach(sfx => {
+    const nameEl = document.getElementById("header-home-name" + sfx);
+    const badgeEl = document.getElementById("header-home-badge" + sfx);
+    if (nameEl) nameEl.textContent = label;
+    if (badgeEl) { badgeEl.textContent = badgeTxt; badgeEl.className = badgeCls; }
+  });
+}
+
+function switchHome(id) {
+  const d = load();
+  d.activeHomeId = id;
+  save(d);
+  currentHomeId = id;
+  closeAllSheets();
+  switchTab(activeTab); // re-render whichever tab is active
+}
+
+function renderHomeSwitcher() {
+  const d = load();
+  const list = document.getElementById("home-options-list");
+  list.innerHTML = d.homes.map(h => `
+    <button class="home-option" data-hid="${h.id}">
+      <div class="home-option-dot" style="background:${h.shared ? '#24639A' : '#3E7048'}"></div>
+      <div class="home-option-body">
+        <div class="home-option-name">${x(homeName(h))}</div>
+        <div class="home-option-addr">${x(h.address || '')}${h.shared ? ' · Shared by ' + x(h.sharedBy||'previous owner') : ''}</div>
+      </div>
+      ${h.id === currentHomeId ? '<span class="home-option-check">✓</span>' : ''}
+    </button>
+    <div class="sheet-divider"></div>
+  `).join('');
+  list.querySelectorAll(".home-option[data-hid]").forEach(b =>
+    b.addEventListener("click", () => switchHome(b.dataset.hid)));
+}
+
+// Home menu
+document.getElementById("btn-home-menu").addEventListener("click", () => {
+  const h = currentHome();
+  document.getElementById("home-menu-label").textContent = h ? homeName(h) : "";
+  const showClaim = !!(h && h.shared);
+  document.getElementById("sheet-claim-home").style.display = showClaim ? "" : "none";
+  document.getElementById("sheet-claim-divider").style.display = showClaim ? "" : "none";
+  openSheet("home-menu-sheet");
+});
+document.getElementById("sheet-claim-home").addEventListener("click", () => {
+  closeAllSheets();
+  const h = currentHome();
+  confirm(
+    "Duplicate home?",
+    `This will create your own copy of "${homeName(h)}" with all its rooms and finishes. The original stays untouched.`,
+    claimCurrentHome,
+    "Duplicate"
+  );
+});
+document.getElementById("sheet-delete-home").addEventListener("click", () => {
+  closeAllSheets();
+  const h = currentHome();
+  confirm("Remove this home?", `"${homeName(h)}" will be removed from your list.`, deleteCurrentHome, "Remove");
+});
+document.getElementById("home-menu-cancel").addEventListener("click", closeAllSheets);
+
+function deleteCurrentHome() {
+  const d = load();
+  d.homes = d.homes.filter(h => h.id !== currentHomeId);
+  d.rooms = d.rooms.filter(r => r.homeId !== currentHomeId);
+  d.finishes = d.finishes.filter(f => {
+    const room = d.rooms.find(r => r.id === f.roomId);
+    return room != null;
+  });
+  // Switch to first remaining home or prompt add
+  if (d.homes.length) { d.activeHomeId = d.homes[0].id; currentHomeId = d.homes[0].id; }
+  else { d.activeHomeId = null; currentHomeId = null; }
+  save(d);
+  toast("Home removed");
+  switchTab("s-rooms");
+}
+
+function claimCurrentHome() {
+  const d = load();
+  const src = d.homes.find(h => h.id === currentHomeId);
+  if (!src) return;
+
+  // Duplicate home with a new ID, mark as owned
+  const newHomeId = uid();
+  const newHome = Object.assign({}, src, {
+    id: newHomeId,
+    shared: false,
+    sharedBy: undefined,
+    nickname: (src.nickname || src.address || "Home") + " (Copy)",
+  });
+  d.homes.push(newHome);
+
+  // Duplicate all rooms under this home, mapping old room IDs → new room IDs
+  const roomIdMap = {};
+  const srcRooms = d.rooms.filter(r => r.homeId === currentHomeId);
+  srcRooms.forEach(r => {
+    const newRoomId = uid();
+    roomIdMap[r.id] = newRoomId;
+    d.rooms.push(Object.assign({}, r, { id: newRoomId, homeId: newHomeId }));
+  });
+
+  // Duplicate all finishes for those rooms
+  d.finishes.filter(f => roomIdMap[f.roomId]).forEach(f => {
+    d.finishes.push(Object.assign({}, f, { id: uid(), roomId: roomIdMap[f.roomId] }));
+  });
+
+  d.activeHomeId = newHomeId;
+  save(d);
+  currentHomeId = newHomeId;
+  toast("Home duplicated");
+  switchTab("s-rooms");
+}
+
+// Home switcher — wire all three tab headers
+["btn-switch-home", "btn-switch-home-upkeep", "btn-switch-home-decor"].forEach(id => {
+  document.getElementById(id).addEventListener("click", () => { renderHomeSwitcher(); openSheet("home-switcher-sheet"); });
+});
+document.getElementById("btn-add-maint-header").addEventListener("click", openAddMaintenance);
+document.getElementById("btn-add-room-header").addEventListener("click", openAddRoom);
+document.getElementById("home-switcher-cancel").addEventListener("click", closeAllSheets);
+document.getElementById("btn-goto-add-home").addEventListener("click", () => { closeAllSheets(); go("s-add-home"); });
+
+// Add new home
+document.getElementById("save-new-home-btn").addEventListener("click", () => {
+  const addr = document.getElementById("nh-address").value.trim();
+  if (!addr) { alert("Please enter an address."); return; }
+  const d = load();
+  const h = { id: uid(), address: addr, nickname: document.getElementById("nh-name").value.trim(), type: document.getElementById("nh-type").value, shared: false, photo: randomHousePhoto() };
+  d.homes.push(h);
+  d.activeHomeId = h.id;
+  save(d);
+  currentHomeId = h.id;
+  toast("Home added");
+  switchTab("s-rooms");
+});
+document.getElementById("back-from-add-home").addEventListener("click", back);
+
+// Load demo shared home
+document.getElementById("btn-load-demo").addEventListener("click", () => {
+  const d = load();
+  if (d.homes.find(h => h.id === "demo-shared")) { toast("Demo home already loaded"); closeAllSheets(); return; }
+  const hid = "demo-shared";
+  d.homes.push({
+    id: hid, address: "47 Birchwood Lane, Concord, NH 03301",
+    nickname: "Birchwood Lane", shared: true, sharedBy: "Sarah & Tom Ellison",
+    type: "Single Family", yearBuilt: 2004, sqft: 2850, lotSize: "0.48 acres",
+    roofMaterial: "Architectural shingle", roofAge: 6,
+    hvac: "Carrier 2-zone heat pump, replaced 2018",
+    waterHeater: "80 gal gas, AO Smith, 2017",
+    septic: "Municipal sewer",
+    electric: "Eversource", gas: "Liberty Utilities", internet: "Comcast 600Mbps",
+    hoa: "None", notes: "Recent full kitchen renovation (2022). Basement partially finished.",
+    photo: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=900&q=80&fit=crop",
+  });
+  const rooms = [
+    { id: uid(), homeId: hid, name: "Kitchen",          type: "Kitchen",     notes: "Full renovation 2022", photo: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&q=80&fit=crop" },
+    { id: uid(), homeId: hid, name: "Primary Bedroom",  type: "Bedroom",     notes: "",                     photo: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=900&q=80&fit=crop" },
+    { id: uid(), homeId: hid, name: "Living Room",      type: "Living Room", notes: "",                     photo: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=900&q=80&fit=crop" },
+    { id: uid(), homeId: hid, name: "Primary Bathroom", type: "Bathroom",    notes: "",                     photo: "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=900&q=80&fit=crop" },
+  ];
+  d.rooms.push(...rooms);
+  d.finishes.push(
+    { id: uid(), roomId: rooms[0].id, type:"paint", brand:"Benjamin Moore", product:"Chantilly Lace", colorName:"OC-65", colorCode:"#F8F6F2", sheen:"Eggshell", retailer:"Home Depot" },
+    { id: uid(), roomId: rooms[0].id, type:"tile", material:"Porcelain", brand:"Daltile", product:"Restore", colorName:"Bright White", sku:"RC0224241P", tileSize:'12"×24"', sheen:"Matte", grout:"Mapei Alabaster", retailer:"Floor & Decor", url:"https://www.flooranddecor.com", stock:"in_stock" },
+    { id: uid(), roomId: rooms[0].id, type:"flooring", material:"Hardwood", brand:"Bruce", product:"American Originals", colorName:"Natural", sku:"E2H201", width:'5"', thickness:"3/4\"", retailer:"Floor & Decor", stock:"in_stock" },
+    { id: uid(), roomId: rooms[1].id, type:"paint", brand:"Sherwin-Williams", product:"Sea Salt", colorName:"SW 6204", colorCode:"#B2C8C1", sheen:"Eggshell", retailer:"Sherwin-Williams" },
+    { id: uid(), roomId: rooms[1].id, type:"flooring", material:"Carpet", brand:"Shaw", product:"Soft Appeal", colorName:"Antique White", sku:"EE019", retailer:"Home Depot", stock:"unknown" },
+    { id: uid(), roomId: rooms[2].id, type:"paint", brand:"Benjamin Moore", product:"White Dove", colorName:"OC-17", colorCode:"#F4F0E8", sheen:"Eggshell", retailer:"Benjamin Moore" },
+    { id: uid(), roomId: rooms[2].id, type:"flooring", material:"Hardwood", brand:"Bruce", product:"American Originals", colorName:"Natural", sku:"E2H201", width:'5"', retailer:"Floor & Decor", stock:"in_stock" },
+    { id: uid(), roomId: rooms[3].id, type:"tile", material:"Porcelain", brand:"MSI", product:"Carrara White", colorName:"White/Gray", sku:"NCARWHI1224P", tileSize:'12"×24"', sheen:"Polished", grout:"Mapei Bright White", retailer:"MSI Surfaces", stock:"in_stock" },
+    { id: uid(), roomId: rooms[3].id, type:"paint", brand:"Benjamin Moore", product:"Chantilly Lace", colorName:"OC-65", colorCode:"#F8F6F2", sheen:"Semi-gloss", retailer:"Home Depot" },
+  );
+  if (!d.maintenance) d.maintenance = [];
+  // Calculate dates relative to today so alerts always appear correctly
+  const today = new Date();
+  const rel = (days) => { const d2 = new Date(today); d2.setDate(d2.getDate() + days); return d2.toISOString().slice(0,10); };
+  d.maintenance.push(
+    { id: uid(), homeId: hid, category: "HVAC",       desc: "Replace furnace filter",        date: rel(-180), cost: "18",  provider: "DIY",                      contact: "",              prodBrand: "Filtrete", prodModel: "MPR 1500 20×25×1",  prodUrl: "https://www.amazon.com/dp/B08PV6ZXHQ", nextDate: rel(22),  notes: "Replace every 90 days. Filter is behind the basement utility door." },
+    { id: uid(), homeId: hid, category: "Plumbing",   desc: "Flush water heater",            date: rel(-365), cost: "0",   provider: "DIY",                      contact: "",              prodBrand: "",         prodModel: "",                   prodUrl: "",                                      nextDate: rel(55),  notes: "Attach hose to drain valve, flush until clear. Extends tank life." },
+    { id: uid(), homeId: hid, category: "Roof",       desc: "Gutter cleaning & inspection",  date: rel(-210), cost: "175", provider: "Apex Property Services",   contact: "(603) 882-4400", prodBrand: "",        prodModel: "",                   prodUrl: "",                                      nextDate: rel(78),  notes: "Spring and fall cleanings. Ask for Derek — he does a thorough job." },
+    { id: uid(), homeId: hid, category: "HVAC",       desc: "Annual heat pump service",      date: rel(-400), cost: "220", provider: "Carrier Factory Auth.",    contact: "(603) 555-0181", prodBrand: "Carrier", prodModel: "2-zone 24ACC636A003",prodUrl: "",                                      nextDate: rel(160), notes: "Full tune-up, coil cleaning, refrigerant check. Book early — they fill up fast." },
+    { id: uid(), homeId: hid, category: "Well",       desc: "Well water quality test",       date: rel(-730), cost: "95",  provider: "NH DES Certified Lab",     contact: "(603) 555-0299", prodBrand: "",        prodModel: "",                   prodUrl: "",                                      nextDate: rel(200), notes: "Test for bacteria, nitrates, arsenic, radon. Required annually for peace of mind." },
+    { id: uid(), homeId: hid, category: "Electrical", desc: "Smoke & CO detector test",     date: rel(-90),  cost: "0",   provider: "DIY",                      contact: "",              prodBrand: "Kidde",    prodModel: "P4010ACSCO",         prodUrl: "",                                      nextDate: rel(275), notes: "Test monthly, replace batteries annually. Detectors on all 3 floors." },
+    { id: uid(), homeId: hid, category: "General",    desc: "Exterior paint touch-up",       date: rel(-540), cost: "340", provider: "Harbor Painting Co.",      contact: "(603) 555-0147", prodBrand: "Benjamin Moore", prodModel: "Aura Exterior OC-17", prodUrl: "",                             nextDate: rel(480), notes: "South-facing trim shows wear fastest. Color matched on file at BM Concord." },
+  );
+  d.activeHomeId = hid;
+  save(d);
+  currentHomeId = hid;
+  toast("Shared home loaded");
+  closeAllSheets();
+  ["nh-address","nh-name"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("nh-type").value = "";
+  switchTab("s-rooms");
+});
+
+// ── House info ────────────────────────────────────────────────────────────────
+function openHouseInfo() {
+  renderHouseInfo();
+  go("s-house-info");
+}
+
+function renderHouseInfo() {
+  const h = currentHome();
+  if (!h) return;
+  document.getElementById("house-info-title").textContent = homeName(h);
+
+  const val = (v) => v ? `<span class="info-value">${x(String(v))}</span>` : `<span class="info-value empty">Not set</span>`;
+  const row = (label, v) => `<div class="info-row"><span class="info-label">${label}</span>${val(v)}</div>`;
+
+  const shared = h.shared ? `<div style="background:#E0EBF5;border-radius:12px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px"><span style="font-size:20px">🤝</span><div><div style="font-size:14px;font-weight:600;color:#24639A">Shared home</div><div style="font-size:13px;color:var(--text2);margin-top:2px">Shared by ${x(h.sharedBy||'previous owner')}</div></div></div>` : "";
+
+  document.getElementById("house-info-body").innerHTML = `
+    ${shared}
+    <div class="section-label">Basic Info</div>
+    <div class="info-section">
+      ${row("Address", h.address)}
+      ${row("Home type", h.type)}
+      ${row("Year built", h.yearBuilt)}
+      ${row("Sq footage", h.sqft ? h.sqft.toLocaleString() + " sq ft" : "")}
+      ${row("Lot size", h.lotSize)}
+    </div>
+    <div class="section-label">Systems</div>
+    <div class="info-section">
+      ${row("Roof material", h.roofMaterial)}
+      ${row("Roof age", h.roofAge ? h.roofAge + " years" : "")}
+      ${row("HVAC", h.hvac)}
+      ${row("Water heater", h.waterHeater)}
+      ${row("Septic / sewer", h.septic)}
+      ${row("Well age", h.wellAge ? h.wellAge + " years" : "")}
+      ${row("Well pump", h.wellPump)}
+    </div>
+    <div class="section-label">Utilities & HOA</div>
+    <div class="info-section">
+      ${row("Electric", h.electric)}
+      ${row("Gas", h.gas)}
+      ${row("Internet", h.internet)}
+      ${row("HOA", h.hoa)}
+    </div>
+    ${h.notes ? `<div class="section-label">Notes</div><div class="info-section"><div class="info-row"><span class="info-value" style="text-align:left;line-height:1.5">${x(h.notes)}</span></div></div>` : ""}
+  `;
+}
+
+document.getElementById("back-from-house-info").addEventListener("click", back);
+document.getElementById("btn-edit-house-info").addEventListener("click", () => {
+  const h = currentHome();
+  if (!h) return;
+  const fv = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ""; };
+  fv("h-address", h.address); fv("h-name", h.nickname); fv("h-type", h.type);
+  fv("h-year", h.yearBuilt); fv("h-sqft", h.sqft); fv("h-lot", h.lotSize);
+  fv("h-roof-mat", h.roofMaterial); fv("h-roof-age", h.roofAge); fv("h-hvac", h.hvac);
+  fv("h-water-heater", h.waterHeater); fv("h-septic", h.septic);
+  fv("h-well-age", h.wellAge); fv("h-well-pump", h.wellPump);
+  fv("h-electric", h.electric); fv("h-gas", h.gas);
+  fv("h-internet", h.internet); fv("h-hoa", h.hoa); fv("h-notes", h.notes);
+  go("s-edit-house");
+});
+document.getElementById("back-from-edit-house").addEventListener("click", back);
+document.getElementById("save-house-btn").addEventListener("click", () => {
+  const d = load();
+  const h = d.homes.find(h => h.id === currentHomeId);
+  if (!h) return;
+  const gv = id => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
+  h.address = gv("h-address"); h.nickname = gv("h-name"); h.type = gv("h-type");
+  h.yearBuilt = gv("h-year"); h.sqft = gv("h-sqft"); h.lotSize = gv("h-lot");
+  h.roofMaterial = gv("h-roof-mat"); h.roofAge = gv("h-roof-age"); h.hvac = gv("h-hvac");
+  h.waterHeater = gv("h-water-heater"); h.septic = gv("h-septic");
+  h.wellAge = gv("h-well-age"); h.wellPump = gv("h-well-pump");
+  h.electric = gv("h-electric"); h.gas = gv("h-gas");
+  h.internet = gv("h-internet"); h.hoa = gv("h-hoa"); h.notes = gv("h-notes");
+  save(d); toast("House info saved");
+  navStack = navStack.filter(s => s !== "s-edit-house");
+  renderHouseInfo();
+  go("s-house-info");
+});
+
+// ── Rooms ─────────────────────────────────────────────────────────────────────
+const RICONS = { bedroom:"bed", kitchen:"chef-hat", bathroom:"bath", living:"sofa", basement:"layers", garage:"car", office:"briefcase", laundry:"shirt", dining:"utensils", hallway:"door-open" };
+function roomIcon(t) {
+  const name = (() => {
+    if (!t) return "house";
+    const k = t.toLowerCase();
+    for (const [w,i] of Object.entries(RICONS)) if (k.includes(w)) return i;
+    return "house";
+  })();
+  return `<i data-lucide="${name}"></i>`;
+}
+
+const CAT_ICONS = { Plumbing:"wrench", HVAC:"thermometer", Electrical:"zap", Roof:"house", Well:"droplets", Septic:"filter", Appliance:"microwave", General:"hammer", Custom:"clipboard-list" };
+
+function sortedMaintForHome(d) {
+  if (!d.maintenance) d.maintenance = [];
+  const today = new Date(); today.setHours(0,0,0,0);
+  return d.maintenance
+    .filter(m => m.homeId === currentHomeId)
+    .sort((a,b) => {
+      const da = a.nextDate ? new Date(a.nextDate+"T00:00:00") : null;
+      const db = b.nextDate ? new Date(b.nextDate+"T00:00:00") : null;
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return da - db;
+    });
+}
+
+function maintDiffDays(nextDate) {
+  if (!nextDate) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.round((new Date(nextDate+"T00:00:00") - today) / 864e5);
+}
+
+// ── Home tab ──────────────────────────────────────────────────────────────────
+function renderRoomsScreen() {
+  const d = load();
+  const h = d.homes.find(h => h.id === currentHomeId);
+  updateHomeHeader();
+
+  if (!h) {
+    document.getElementById("rooms-body").innerHTML = `
+      <div class="empty">
+        <div class="eicon"><i data-lucide="house"></i></div>
+        <p>No home selected.<br>Add your first home to get started.</p>
+      </div>
+      <div style="padding:0 0 20px">
+        <button class="btn btn-primary" onclick="document.getElementById('back-from-add-home').style.display='none'; go('s-add-home')">Add a home</button>
+      </div>`;
+    return;
+  }
+
+  // House header
+  const houseCard = `
+    <div class="house-header">
+      ${h.photo ? `
+        <div class="house-header-photo-wrap">
+          <img class="house-header-photo" src="${x(h.photo)}" alt="${x(homeName(h))}">
+          <button class="house-photo-cam" id="btn-home-photo" title="Change photo"><i data-lucide="camera"></i></button>
+        </div>` : `
+        <button class="house-header-add-photo" id="btn-home-photo"><i data-lucide="camera"></i> Add exterior photo</button>`}
+      <div class="house-header-name">${x(homeName(h))}</div>
+      ${h.address ? `<div class="house-header-address">${x(h.address)}</div>` : ""}
+      <button class="house-header-details" id="btn-open-house-info">More details →</button>
+    </div>`;
+
+  // Upcoming maintenance alert card — show overdue + due within 90 days
+  const allMaint = sortedMaintForHome(d);
+  const alertItems = allMaint.filter(m => {
+    if (!m.nextDate) return false;
+    const diff = maintDiffDays(m.nextDate);
+    return diff !== null && diff <= 90;
+  }).slice(0, 5);
+
+  let alertHtml = "";
+  if (alertItems.length) {
+    const rows = alertItems.map(m => {
+      const diff = maintDiffDays(m.nextDate);
+      const overdue = diff < 0;
+      const label = diff < 0 ? "Overdue" : diff === 0 ? "Today" : `In ${diff}d`;
+      const cls = overdue ? "overdue" : "soon";
+      return `<div class="alert-row" data-maint="${m.id}">
+        <span class="alert-row-icon"><i data-lucide="${CAT_ICONS[m.category]||'hammer'}"></i></span>
+        <span class="alert-row-desc">${x(m.desc)}</span>
+        <span class="alert-row-badge ${cls}">${label}</span>
+      </div>`;
+    }).join("");
+    const moreCount = allMaint.filter(m => m.nextDate && maintDiffDays(m.nextDate) !== null && maintDiffDays(m.nextDate) > 90).length;
+    alertHtml = `
+      <div class="alert-card">
+        <div class="alert-card-title"><i data-lucide="bell"></i> Upcoming Upkeep</div>
+        ${rows}
+        ${moreCount ? `<button class="alert-card-more" id="btn-alert-see-all">See all upkeep →</button>` : ""}
+      </div>`;
+  }
+
+  document.getElementById("rooms-body").innerHTML = houseCard + alertHtml;
+
+  document.getElementById("btn-open-house-info").addEventListener("click", openHouseInfo);
+  document.getElementById("btn-home-photo").addEventListener("click", e => { e.stopPropagation(); pickHomePhoto(); });
+  document.querySelectorAll(".alert-row[data-maint]").forEach(r =>
+    r.addEventListener("click", () => openEditMaintenance(r.dataset.maint)));
+  const seeAll = document.getElementById("btn-alert-see-all");
+  if (seeAll) seeAll.addEventListener("click", () => switchTab("s-upkeep"));
+  if (window.lucide) lucide.createIcons();
+}
+
+// ── Upkeep tab ────────────────────────────────────────────────────────────────
+function renderUpkeepTab() {
+  updateHomeHeader();
+  const d = load();
+  const h = d.homes.find(h => h.id === currentHomeId);
+  if (!h) { document.getElementById("upkeep-body").innerHTML = `<div class="maint-empty">No home selected.</div>`; return; }
+
+  const allMaint = sortedMaintForHome(d);
+  let html = "";
+  if (!allMaint.length) {
+    html = `<div class="maint-empty">No upkeep records yet.<br>Tap + to add one.</div>`;
+  } else {
+    allMaint.forEach(m => {
+      const diff = m.nextDate ? maintDiffDays(m.nextDate) : null;
+      let badgeCls = "none", badgeLabel = "No next date";
+      if (diff !== null) {
+        if (diff < 0)       { badgeCls = "overdue"; badgeLabel = "Overdue"; }
+        else if (diff === 0){ badgeCls = "overdue"; badgeLabel = "Due today"; }
+        else if (diff <= 30){ badgeCls = "soon";    badgeLabel = `Due in ${diff}d`; }
+        else                { badgeCls = "ok";      badgeLabel = `Next: ${fmtDate(m.nextDate)}`; }
+      }
+      const lastDone = m.date ? `<span class="maint-last">Last done: ${fmtDate(m.date)}</span>` : "";
+      const cost  = m.cost ? `<span class="maint-cost-inline">· $${parseFloat(m.cost).toFixed(2)}</span>` : "";
+      const prov  = m.provider ? `<div class="maint-meta">${x(m.provider)}${m.contact ? " · " + x(m.contact) : ""}</div>` : "";
+      const attachChip = m.attachment ? attachmentChip(m.attachment, m.id) : "";
+      html += `<div class="maint-card" data-maint="${m.id}">
+        <div class="maint-header">
+          <span class="maint-cat">${x(m.category||"General")}</span>
+          <span class="maint-dash-due ${badgeCls}" style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px">${badgeLabel}</span>
+        </div>
+        <div class="maint-desc">${x(m.desc||"")}</div>
+        <div class="maint-dates-row">${lastDone}${cost}</div>
+        ${prov}${attachChip}
+      </div>`;
+    });
+  }
+  document.getElementById("upkeep-body").innerHTML = html;
+  document.querySelectorAll(".maint-card[data-maint]").forEach(c =>
+    c.addEventListener("click", () => openEditMaintenance(c.dataset.maint)));
+  if (window.lucide) lucide.createIcons();
+}
+
+// ── Decor tab ─────────────────────────────────────────────────────────────────
+function renderDecorTab() {
+  updateHomeHeader();
+  const d = load();
+  const h = d.homes.find(h => h.id === currentHomeId);
+  if (!h) { document.getElementById("decor-body").innerHTML = `<div class="maint-empty">No home selected.</div>`; return; }
+
+  const rooms = d.rooms.filter(r => r.homeId === currentHomeId);
+
+  function roomCardHtml(r) {
+    if (r.photo) {
+      return `<div class="room-card-photo" data-room="${r.id}">
+        <img src="${r.photo}" alt="${x(r.name)}">
+        <div class="room-card-photo-overlay"></div>
+        <div class="room-card-photo-label">
+          <div><div class="room-card-photo-name">${x(r.name)}</div>${r.type?`<div class="room-card-photo-type">${x(r.type)}</div>`:""}</div>
+          <div style="color:rgba(255,255,255,.6);font-size:18px">›</div>
+        </div>
+      </div>`;
+    }
+    return `<div class="room-card" data-room="${r.id}">
+      <div class="room-icon">${roomIcon(r.type)}</div>
+      <div class="room-card-name">${x(r.name)}</div>
+      <div class="room-chevron">›</div>
+    </div>`;
+  }
+
+  document.getElementById("decor-body").innerHTML = rooms.map(roomCardHtml).join("");
+  document.querySelectorAll("#decor-body .room-card[data-room], #decor-body .room-card-photo[data-room]").forEach(c =>
+    c.addEventListener("click", () => openRoom(c.dataset.room)));
+  if (window.lucide) lucide.createIcons();
+}
+
+function openAddRoom() {
+  editingRoomId = null;
+  document.getElementById("room-name").value = "";
+  document.getElementById("room-type").value = "";
+  document.getElementById("room-notes").value = "";
+  document.getElementById("add-room-title").textContent = "New Room";
+  go("s-add-room");
+}
+
+function openEditRoom() {
+  const { rooms } = load();
+  const r = rooms.find(r => r.id === currentRoomId);
+  if (!r) return;
+  editingRoomId = r.id;
+  document.getElementById("room-name").value = r.name;
+  document.getElementById("room-type").value = r.type || "";
+  document.getElementById("room-notes").value = r.notes || "";
+  document.getElementById("add-room-title").textContent = "Edit Room";
+  go("s-add-room");
+}
+
+function saveRoom() {
+  const name = document.getElementById("room-name").value.trim();
+  if (!name) { alert("Please enter a room name."); return; }
+  const d = load();
+  if (editingRoomId) {
+    const r = d.rooms.find(r => r.id === editingRoomId);
+    if (r) { r.name = name; r.type = document.getElementById("room-type").value.trim(); r.notes = document.getElementById("room-notes").value.trim(); }
+    save(d); toast("Room updated");
+    currentRoomId = editingRoomId;
+    navStack = navStack.filter(s => s !== "s-add-room");
+    renderFinishes(); go("s-room");
+  } else {
+    const r = { id: uid(), homeId: currentHomeId, name, type: document.getElementById("room-type").value.trim(), notes: document.getElementById("room-notes").value.trim() };
+    d.rooms.push(r); save(d); toast("Room added");
+    currentRoomId = r.id;
+    navStack = navStack.filter(s => s !== "s-add-room");
+    navStack.push("s-room");
+    renderFinishes(); go("s-room");
+  }
+}
+
+function openRoom(id) { currentRoomId = id; renderFinishes(); go("s-room"); }
+
+// Room menu
+document.getElementById("btn-room-menu").addEventListener("click", () => {
+  const { rooms } = load();
+  const r = rooms.find(r => r.id === currentRoomId);
+  document.getElementById("room-menu-title").textContent = r ? r.name : "";
+  openSheet("room-menu-sheet");
+});
+document.getElementById("sheet-change-photo").addEventListener("click", () => { closeAllSheets(); pickRoomPhoto(currentRoomId); });
+document.getElementById("sheet-edit-room").addEventListener("click", () => { closeAllSheets(); openEditRoom(); });
+document.getElementById("sheet-delete-room").addEventListener("click", () => {
+  closeAllSheets();
+  const { rooms } = load();
+  const r = rooms.find(r => r.id === currentRoomId);
+  confirm("Delete room?", `"${r?.name}" and all its finishes will be permanently deleted.`, deleteRoom);
+});
+document.getElementById("room-menu-cancel").addEventListener("click", closeAllSheets);
+document.getElementById("back-from-add-room").addEventListener("click", back);
+document.getElementById("save-room-btn").addEventListener("click", saveRoom);
+document.getElementById("back-from-room").addEventListener("click", back);
+
+function deleteRoom() {
+  const d = load();
+  d.rooms = d.rooms.filter(r => r.id !== currentRoomId);
+  d.finishes = d.finishes.filter(f => f.roomId !== currentRoomId);
+  save(d); toast("Room deleted");
+  navStack = navStack.filter(s => s !== "s-room");
+  switchTab("s-decor");
+}
+
+// ── Finishes ──────────────────────────────────────────────────────────────────
+const FTYPES = [
+  { v:"paint",    l:"Paint",    i:"paintbrush"    },
+  { v:"flooring", l:"Flooring", i:"layout-grid"   },
+  { v:"trim",     l:"Trim",     i:"minus"          },
+  { v:"ceiling",  l:"Ceiling",  i:"chevrons-up"   },
+  { v:"tile",     l:"Tile",     i:"grid-3x3"      },
+  { v:"other",    l:"Other",    i:"more-horizontal"},
+];
+const STOCK_OPTS = [
+  { v:"unknown", l:"Unknown" }, { v:"in_stock", l:"In Stock" }, { v:"out_of_stock", l:"Discontinued" }
+];
+const TYPE_FIELDS = {
+  paint: [
+    { row:[{id:"f-brand",label:"Brand",ph:"e.g. Benjamin Moore"},{id:"f-product",label:"Product name",ph:"e.g. Chantilly Lace"}]},
+    { row:[{id:"f-color-name",label:"Color name",ph:"e.g. OC-65"},{id:"f-color-code",label:"Hex / color code",ph:"e.g. #F8F6F0"}]},
+    { id:"f-sheen",label:"Finish / sheen",ph:"e.g. Eggshell, Satin, Matte"},
+    { id:"f-retailer",label:"Retailer",ph:"e.g. Home Depot"},
+    { id:"f-url",label:"Product URL",ph:"https://…",type:"url"},
+    { id:"f-notes",label:"Notes",ph:"e.g. Second coat applied 6 months after first",textarea:true},
+  ],
+  ceiling: [
+    { row:[{id:"f-brand",label:"Brand",ph:"e.g. Benjamin Moore"},{id:"f-product",label:"Product name",ph:"e.g. Ceiling White"}]},
+    { row:[{id:"f-color-name",label:"Color name",ph:"e.g. Ultra White"},{id:"f-color-code",label:"Hex / color code",ph:"e.g. #FFFFFF"}]},
+    { id:"f-sheen",label:"Finish / sheen",ph:"e.g. Flat"},
+    { id:"f-retailer",label:"Retailer",ph:"e.g. Home Depot"},
+    { id:"f-url",label:"Product URL",ph:"https://…",type:"url"},
+    { id:"f-notes",label:"Notes",ph:"",textarea:true},
+  ],
+  flooring: [
+    { id:"f-material",label:"Material type",material:["Vinyl / LVP","Hardwood","Laminate","Carpet","Tile","Cork","Concrete","Other"]},
+    { row:[{id:"f-brand",label:"Brand",ph:"e.g. LifeProof"},{id:"f-product",label:"Collection / product",ph:"e.g. Fresh Oak"}]},
+    { row:[{id:"f-sku",label:"SKU",ph:"Product SKU"},{id:"f-color-name",label:"Color / finish",ph:"e.g. Natural Hickory"}]},
+    { row:[{id:"f-width",label:"Plank width",ph:'e.g. 7"'},{id:"f-thickness",label:"Thickness",ph:"e.g. 12mm"}]},
+    { id:"f-retailer",label:"Retailer",ph:"e.g. Floor & Decor"},
+    { id:"f-url",label:"Product URL",ph:"https://…",type:"url"},
+    { id:"f-stock",label:"Availability",stock:true},
+    { id:"f-notes",label:"Notes",ph:"e.g. Runs north–south, installed 2022",textarea:true},
+  ],
+  tile: [
+    { id:"f-material",label:"Material type",material:["Ceramic","Porcelain","Natural Stone","Glass","Cement","Mosaic","Other"]},
+    { row:[{id:"f-brand",label:"Brand",ph:"e.g. Daltile"},{id:"f-product",label:"Collection / product",ph:"e.g. Restore"}]},
+    { row:[{id:"f-sku",label:"SKU",ph:"Product SKU"},{id:"f-color-name",label:"Color",ph:"e.g. Arctic White"}]},
+    { row:[{id:"f-tile-size",label:"Tile size",ph:'e.g. 12"×24"'},{id:"f-sheen",label:"Surface finish",ph:"e.g. Matte, Glossy"}]},
+    { id:"f-grout",label:"Grout color",ph:"e.g. Mapei Alabaster"},
+    { id:"f-retailer",label:"Retailer",ph:"e.g. Tile Shop"},
+    { id:"f-url",label:"Product URL",ph:"https://…",type:"url"},
+    { id:"f-stock",label:"Availability",stock:true},
+    { id:"f-notes",label:"Notes",ph:"",textarea:true},
+  ],
+  trim: [
+    { id:"f-material",label:"Trim type",material:["Baseboard","Crown Molding","Door Casing","Window Casing","Chair Rail","Wainscoting","Other"]},
+    { row:[{id:"f-brand",label:"Brand",ph:""},{id:"f-product",label:"Profile / product",ph:"e.g. Colonial Base"}]},
+    { row:[{id:"f-sku",label:"SKU",ph:"Product SKU"},{id:"f-color-name",label:"Paint color",ph:"e.g. Chantilly Lace"}]},
+    { id:"f-retailer",label:"Retailer",ph:"e.g. Home Depot"},
+    { id:"f-url",label:"Product URL",ph:"https://…",type:"url"},
+    { id:"f-stock",label:"Availability",stock:true},
+    { id:"f-notes",label:"Notes",ph:"",textarea:true},
+  ],
+  other: [
+    { row:[{id:"f-brand",label:"Brand",ph:""},{id:"f-product",label:"Product name",ph:""}]},
+    { id:"f-sku",label:"SKU",ph:"Product SKU"},
+    { id:"f-retailer",label:"Retailer",ph:""},
+    { id:"f-url",label:"Product URL",ph:"https://…",type:"url"},
+    { id:"f-stock",label:"Availability",stock:true},
+    { id:"f-notes",label:"Notes",ph:"",textarea:true},
+  ],
+};
+
+function mkField(id,label,ph,opts={}) {
+  if (opts.textarea) return `<div class="field"><label>${label}</label><textarea id="${id}" placeholder="${ph}"></textarea></div>`;
+  return `<div class="field"><label>${label}</label><input type="${opts.type||"text"}" id="${id}" placeholder="${ph}"></div>`;
+}
+
+function renderFinishFields() {
+  const defs = TYPE_FIELDS[selType] || TYPE_FIELDS.other;
+  let html = "";
+  defs.forEach(d => {
+    if (d.row) {
+      html += `<div class="row">`+d.row.map(f=>mkField(f.id,f.label,f.ph||"",f)).join("")+`</div>`;
+    } else if (d.material) {
+      html += `<div class="field"><label>${d.label}</label><div class="chips" id="material-chips">`+
+        d.material.map(m=>`<button class="chip${selMaterial===m?" on":""}" data-mat="${m}">${m}</button>`).join("")+
+        `</div></div>`;
+    } else if (d.stock) {
+      html += `<div class="field"><label>${d.label}</label><div class="chips" id="stock-chips">`+
+        STOCK_OPTS.map(s=>`<button class="chip${selStock===s.v?" on":""}" data-stock="${s.v}">${s.l}</button>`).join("")+
+        `</div></div>`;
+    } else {
+      html += mkField(d.id,d.label,d.ph||"",d);
+    }
+  });
+  document.getElementById("finish-fields").innerHTML = html;
+  document.querySelectorAll("#material-chips .chip").forEach(b=>
+    b.addEventListener("click",()=>{ captureFinishValues(); selMaterial=b.dataset.mat; renderFinishFields(); restoreFinishValues(); }));
+  document.querySelectorAll("#stock-chips .chip").forEach(b=>
+    b.addEventListener("click",()=>{ selStock=b.dataset.stock; renderFinishFields(); restoreFinishValues(); }));
+}
+
+function renderTypeChips() {
+  document.getElementById("type-chips").innerHTML = FTYPES.map(t=>
+    `<button class="chip${selType===t.v?" on":""}" data-type="${t.v}">${t.l}</button>`).join("");
+  document.querySelectorAll("#type-chips .chip").forEach(b=>
+    b.addEventListener("click",()=>{ captureFinishValues(); selType=b.dataset.type; selMaterial=""; renderTypeChips(); renderFinishFields(); restoreFinishValues(); }));
+  renderFinishFields();
+  if (window.lucide) lucide.createIcons();
+}
+
+function captureFinishValues() {
+  document.querySelectorAll("#finish-fields input,#finish-fields textarea").forEach(el=>{ if(el.id) _formValues[el.id]=el.value; });
+}
+function restoreFinishValues() {
+  document.querySelectorAll("#finish-fields input,#finish-fields textarea").forEach(el=>{ if(el.id && _formValues[el.id]!==undefined) el.value=_formValues[el.id]; });
+}
+function clearFinishValues() { _formValues={}; }
+
+function swatchColor(f) {
+  if (f.colorCode && /^#[0-9a-fA-F]{3,6}$/.test(f.colorCode.trim())) return f.colorCode.trim();
+  const n=(f.colorName||f.product||"").toLowerCase();
+  if(n.includes("white")||n.includes("lace")||n.includes("cream")||n.includes("dove")) return "#f5f0e8";
+  if(n.includes("gray")||n.includes("grey")) return "#9e9e9e";
+  if(n.includes("blue")) return "#5b8fd4";
+  if(n.includes("green")||n.includes("sage")||n.includes("sea salt")) return "#7ab5a0";
+  if(n.includes("navy")) return "#2c3e6b";
+  if(n.includes("black")) return "#222";
+  if(n.includes("red")) return "#c0392b";
+  return "#888";
+}
+
+function renderFinishes() {
+  const { rooms, finishes } = load();
+  const room = rooms.find(r => r.id === currentRoomId);
+  document.getElementById("room-detail-name").textContent = room ? room.name : "Room";
+
+  // Update hero image
+  const hero = document.getElementById("room-hero");
+  const placeholder = document.getElementById("room-hero-placeholder");
+  if (room && room.photo) {
+    let img = hero.querySelector("img.hero-img");
+    if (!img) { img = document.createElement("img"); img.className = "hero-img"; img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;"; hero.insertBefore(img, hero.firstChild); }
+    img.src = room.photo;
+    placeholder.style.display = "none";
+  } else {
+    const img = hero.querySelector("img.hero-img");
+    if (img) img.remove();
+    placeholder.style.display = "";
+    placeholder.innerHTML = roomIcon(room?.type);
+  }
+  const rf = finishes.filter(f => f.roomId === currentRoomId);
+
+  const active   = rf.filter(f => !f.archived);
+  const archived = rf.filter(f => f.archived);
+  const paints   = active.filter(f => f.type==="paint");
+  const ceilings = active.filter(f => f.type==="ceiling");
+  const others   = active.filter(f => !["paint","ceiling"].includes(f.type));
+  let html = "";
+
+  if (paints.length) {
+    html += `<div class="section-label">PAINT</div><div class="paint-grid">`+
+      paints.map(f=>`<div class="paint-card" data-fid="${f.id}">
+        <div class="swatch" style="background:${swatchColor(f)}"></div>
+        <div class="paint-info">
+          <div class="paint-name">${x(f.colorName||f.product||f.brand||"—")}</div>
+          <div class="paint-sub">${[f.brand, f.sheen].filter(Boolean).map(x).join(" · ")}</div>
+          ${f.sku||f.colorCode ? `<div class="paint-sku">${[f.colorCode, f.sku].filter(Boolean).map(x).join(" · ")}</div>` : ""}
+        </div>
+      </div>`).join("")+`</div>`;
+  }
+  if (ceilings.length) {
+    html += `<div class="section-label">CEILING</div><div class="paint-grid">`+
+      ceilings.map(f=>`<div class="paint-card" data-fid="${f.id}">
+        <div class="swatch" style="background:${swatchColor(f)}"></div>
+        <div class="paint-info">
+          <div class="paint-name">${x(f.colorName||f.product||f.brand||"—")}</div>
+          <div class="paint-sub">${[f.brand, f.sheen].filter(Boolean).map(x).join(" · ")}</div>
+        </div>
+      </div>`).join("")+`</div>`;
+  }
+  if (others.length) {
+    const types = [...new Set(others.map(f=>f.type))];
+    types.forEach(type=>{
+      const group = others.filter(f=>f.type===type);
+      const info = FTYPES.find(t=>t.v===type)||{i:"·",l:type};
+      html += `<div class="section-label"><i data-lucide="${info.i}"></i> ${info.l.toUpperCase()}</div>`;
+      group.forEach(f=>{
+        const bc=f.stock==="in_stock"?"fbadge-in":f.stock==="out_of_stock"?"fbadge-out":"fbadge-unk";
+        const bl=f.stock==="in_stock"?"In Stock":f.stock==="out_of_stock"?"Discontinued":"Unknown";
+        const name=[f.brand,f.product].filter(Boolean).join(" · ")||"(unnamed)";
+        html+=`<div class="finish-card" data-fid="${f.id}">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px">
+            <div class="finish-name" style="margin-bottom:0">${x(name)}</div>
+            <span class="fbadge ${bc}" style="flex-shrink:0;margin-top:2px">${bl}</span>
+          </div>
+          ${f.material?`<div class="finish-sub">${x(f.material)}</div>`:""}
+          ${f.colorName?`<div class="finish-sub">${x(f.colorName)}${f.colorCode?" · "+x(f.colorCode):""}</div>`:""}
+          ${(f.tileSize||f.width)?`<div class="finish-sku">${[f.tileSize,f.width&&f.thickness?f.width+" · "+f.thickness:f.width].filter(Boolean).join(" · ")}</div>`:""}
+          ${f.grout?`<div class="finish-sku">Grout: ${x(f.grout)}</div>`:""}
+          ${f.sku?`<div class="finish-sku">SKU: ${x(f.sku)}</div>`:""}
+          ${f.notes?`<div class="finish-sku" style="color:var(--text2);margin-top:4px">${x(f.notes)}</div>`:""}
+          ${f.url?`<a class="buy-btn" href="${x(f.url)}" target="_blank" rel="noopener"><span><i data-lucide="shopping-cart"></i> Buy Again</span></a>`:""}
+        </div>`;
+      });
+    });
+  }
+  if (!active.length && !archived.length) {
+    html=`<div class="empty"><div class="eicon"><i data-lucide="paintbrush"></i></div><p>No finishes yet.<br>Tap + to add paint, flooring, or any material.</p></div>`;
+  }
+
+  // Archive section
+  if (archived.length) {
+    html += `<div style="margin-top:24px">
+      <button class="archive-toggle" id="archive-toggle-btn">
+        <span><i data-lucide="${archiveOpen ? "chevron-down" : "chevron-right"}"></i></span>
+        <span>Archived (${archived.length})</span>
+      </button>`;
+    if (archiveOpen) {
+      archived.forEach(f => {
+        const ft = FTYPES.find(t=>t.v===f.type)||{i:"·",l:f.type};
+        const name=[f.brand,f.product].filter(Boolean).join(" · ")||f.colorName||"(unnamed)";
+        const isPaint = f.type==="paint"||f.type==="ceiling";
+        html += `<div class="archived-finish-card" data-archived="${f.id}">
+          <div class="archived-label"><i data-lucide="${ft.i}"></i> ${ft.l}</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            ${isPaint ? `<div style="width:36px;height:48px;border-radius:3px 3px 8px 8px;background:${swatchColor(f)};flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>` : ""}
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--text)">${x(name)}</div>
+              ${f.colorName&&!isPaint?"":f.colorName?`<div style="font-size:12px;color:var(--text2)">${x(f.colorName)}</div>`:""}
+              ${f.material?`<div style="font-size:12px;color:var(--text2)">${x(f.material)}</div>`:""}
+            </div>
+          </div>
+          <div class="archived-date">Archived ${x(f.archivedAt||"")}</div>
+        </div>`;
+      });
+    }
+    html += `</div>`;
+  }
+
+  document.getElementById("finishes-body").innerHTML = html;
+  document.querySelectorAll("[data-fid]").forEach(c=>
+    c.addEventListener("click",()=>openFinishDetail(c.dataset.fid)));
+
+  const toggleBtn = document.getElementById("archive-toggle-btn");
+  if (toggleBtn) toggleBtn.addEventListener("click", () => { archiveOpen = !archiveOpen; renderFinishes(); });
+
+  document.querySelectorAll("[data-archived]").forEach(c=>
+    c.addEventListener("click", () => {
+      tappedFinishId = c.dataset.archived;
+      const { finishes } = load();
+      const f = finishes.find(f=>f.id===tappedFinishId);
+      const name = f?([f.brand,f.product].filter(Boolean).join(" · ")||f.colorName||"Finish"):"Finish";
+      document.getElementById("archived-action-title").textContent = name;
+      openSheet("archived-action-sheet");
+    }));
+  if (window.lucide) lucide.createIcons();
+}
+
+// ── Finish detail screen ──────────────────────────────────────────────────────
+function openFinishDetail(id) {
+  tappedFinishId = id;
+  renderFinishDetail(id);
+  go("s-finish-detail");
+}
+
+function renderFinishDetail(id) {
+  const { finishes } = load();
+  const f = finishes.find(fi=>fi.id===id);
+  if (!f) return;
+
+  const typeInfo = FTYPES.find(t=>t.v===f.type)||{i:"more-horizontal",l:f.type||"Finish"};
+  const name = [f.brand, f.product].filter(Boolean).join(" · ") || f.colorName || "(unnamed)";
+  document.getElementById("finish-detail-title").textContent = name;
+
+  const row = (label, val) => val
+    ? `<div class="info-row"><span class="info-label">${label}</span><span class="info-value">${x(String(val))}</span></div>`
+    : "";
+
+  const stockLabel = f.stock==="in_stock"?"In Stock":f.stock==="out_of_stock"?"Discontinued":f.stock?"Unknown":"";
+
+  const isPaint = f.type==="paint"||f.type==="ceiling";
+  const swatchHtml = isPaint && f.colorCode
+    ? `<div style="width:100%;height:70px;border-radius:var(--r);background:${x(f.colorCode)};margin-bottom:16px;box-shadow:inset 0 -2px 8px rgba(0,0,0,.08)"></div>`
+    : "";
+
+  const infoRows = `
+    <div class="info-section">
+      ${row("Brand", f.brand)}
+      ${row("Product", f.product)}
+      ${row("Color", f.colorName)}
+      ${row("Color code", f.colorCode)}
+      ${row("Sheen", f.sheen)}
+      ${row("Material", f.material)}
+      ${row("SKU", f.sku)}
+      ${row("Tile size", f.tileSize)}
+      ${row("Width", f.width)}
+      ${row("Thickness", f.thickness)}
+      ${row("Grout", f.grout)}
+      ${row("Availability", stockLabel)}
+      ${row("Retailer", f.retailer)}
+    </div>`;
+
+  let html = `
+    <div class="section-label"><i data-lucide="${typeInfo.i}"></i> ${typeInfo.l.toUpperCase()}</div>
+    ${swatchHtml}
+    ${infoRows}
+    ${f.notes ? `<div class="section-label">Notes</div><div class="info-section"><div class="info-row"><span class="info-value" style="text-align:left;line-height:1.5">${x(f.notes)}</span></div></div>` : ""}
+    ${f.url ? `<a class="buy-btn" href="${x(f.url)}" target="_blank" rel="noopener" style="margin-top:20px"><span><i data-lucide="shopping-cart"></i> Buy Again</span>${f.retailer?`<span style="color:var(--text2);font-size:13px">· ${x(f.retailer)}</span>`:""}</a>` : ""}
+  `;
+  document.getElementById("finish-detail-body").innerHTML = html;
+  if (window.lucide) lucide.createIcons();
+}
+
+document.getElementById("back-from-finish-detail").addEventListener("click", back);
+document.getElementById("btn-finish-detail-menu").addEventListener("click", () => openFinishActionSheet(tappedFinishId));
+
+// Finish action sheet
+function openFinishActionSheet(id) {
+  tappedFinishId = id;
+  const { finishes } = load();
+  const f = finishes.find(f=>f.id===id);
+  const name = f?([f.brand,f.product].filter(Boolean).join(" · ")||f.colorName||"Finish"):"Finish";
+  document.getElementById("finish-action-title").textContent = name;
+  openSheet("finish-action-sheet");
+}
+document.getElementById("sheet-edit-finish").addEventListener("click",()=>{ closeAllSheets(); openEditFinish(tappedFinishId); });
+document.getElementById("sheet-archive-finish").addEventListener("click",()=>{ closeAllSheets(); archiveFinish(tappedFinishId); });
+document.getElementById("sheet-delete-finish").addEventListener("click",()=>{ closeAllSheets(); confirm("Delete finish?","This finish will be permanently removed.",()=>deleteFinish(tappedFinishId)); });
+document.getElementById("finish-action-cancel").addEventListener("click", closeAllSheets);
+
+// Archived action sheet
+document.getElementById("sheet-restore-finish").addEventListener("click",()=>{ closeAllSheets(); restoreFinish(tappedFinishId); });
+document.getElementById("sheet-delete-archived").addEventListener("click",()=>{ closeAllSheets(); confirm("Delete permanently?","This finish will be gone for good.",()=>deleteFinish(tappedFinishId)); });
+document.getElementById("archived-action-cancel").addEventListener("click", closeAllSheets);
+
+function archiveFinish(id) {
+  const d = load();
+  const f = d.finishes.find(f => f.id === id);
+  if (f) { f.archived = true; f.archivedAt = new Date().toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"}); }
+  save(d); toast("Finish archived"); renderFinishes();
+}
+
+function restoreFinish(id) {
+  const d = load();
+  const f = d.finishes.find(f => f.id === id);
+  if (f) { delete f.archived; delete f.archivedAt; }
+  save(d); toast("Finish restored"); renderFinishes();
+}
+document.getElementById("btn-add-finish").addEventListener("click", openAddFinish);
+document.getElementById("room-hero-cam").addEventListener("click", () => pickRoomPhoto(currentRoomId));
+document.getElementById("back-from-finish").addEventListener("click", back);
+document.getElementById("save-finish-btn").addEventListener("click", saveFinish);
+document.getElementById("delete-finish-btn").addEventListener("click",()=>
+  confirm("Delete finish?","This finish will be permanently removed.",()=>deleteFinish(editingFinishId)));
+
+function gv(id) { const el=document.getElementById(id); return el?el.value.trim():""; }
+
+function openAddFinish() {
+  editingFinishId=null; selType="paint"; selStock="unknown"; selMaterial=""; clearFinishValues();
+  document.getElementById("add-finish-title").textContent="Add Finish";
+  document.getElementById("delete-finish-btn").style.display="none";
+  renderTypeChips(); go("s-add-finish");
+}
+
+function openEditFinish(id) {
+  const { finishes } = load();
+  const f = finishes.find(f=>f.id===id);
+  if (!f) return;
+  editingFinishId=id; selType=f.type||"paint"; selStock=f.stock||"unknown"; selMaterial=f.material||"";
+  clearFinishValues();
+  _formValues={"f-brand":f.brand||"","f-product":f.product||"","f-color-name":f.colorName||"","f-color-code":f.colorCode||"","f-sku":f.sku||"","f-sheen":f.sheen||"","f-retailer":f.retailer||"","f-url":f.url||"","f-notes":f.notes||"","f-grout":f.grout||"","f-width":f.width||"","f-thickness":f.thickness||"","f-tile-size":f.tileSize||""};
+  document.getElementById("add-finish-title").textContent="Edit Finish";
+  document.getElementById("delete-finish-btn").style.display="block";
+  renderTypeChips(); restoreFinishValues(); go("s-add-finish");
+}
+
+function saveFinish() {
+  const d = load();
+  const finish={id:editingFinishId||uid(),roomId:currentRoomId,type:selType,stock:selStock,material:selMaterial,brand:gv("f-brand"),product:gv("f-product"),colorName:gv("f-color-name"),colorCode:gv("f-color-code"),sku:gv("f-sku"),sheen:gv("f-sheen"),retailer:gv("f-retailer"),url:gv("f-url"),notes:gv("f-notes"),grout:gv("f-grout"),width:gv("f-width"),thickness:gv("f-thickness"),tileSize:gv("f-tile-size")};
+  if (editingFinishId) { const i=d.finishes.findIndex(f=>f.id===editingFinishId); if(i>-1) d.finishes[i]=finish; }
+  else d.finishes.push(finish);
+  save(d); toast(editingFinishId?"Finish updated":"Finish added");
+  navStack=navStack.filter(s=>s!=="s-add-finish");
+  renderFinishes(); go("s-room");
+}
+
+function deleteFinish(id) {
+  const d=load(); d.finishes=d.finishes.filter(f=>f.id!==id); save(d); toast("Finish deleted"); renderFinishes();
+}
+
+// ── Escape HTML ───────────────────────────────────────────────────────────────
+function x(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+// ── Settings / Account ────────────────────────────────────────────────────────
+function initials(name) {
+  if (!name) return "?";
+  return name.trim().split(/\s+/).slice(0,2).map(w=>w[0].toUpperCase()).join("");
+}
+
+function renderSettingsTab() {
+  const d = ensureSettings(load());
+  const p = d.profile;
+  const ini = initials(p.name);
+
+  const adminRows = d.admins.length
+    ? d.admins.map(a => `
+        <div class="settings-person" data-admin-id="${a.id}">
+          <div class="person-avatar">${initials(a.name)}</div>
+          <div style="flex:1;min-width:0">
+            <div class="person-name">${x(a.name)}</div>
+            <div class="person-detail">${x(a.email)}</div>
+          </div>
+          <button class="person-remove" data-remove-admin="${a.id}" aria-label="Remove"><i data-lucide="x"></i></button>
+        </div>`).join("")
+    : `<div class="settings-person"><div class="person-detail" style="color:var(--text2);font-style:italic">No admins added yet.</div></div>`;
+
+  const sharedRows = d.shared.length
+    ? d.shared.map(s => `
+        <div class="settings-person" data-shared-id="${s.id}">
+          <div class="person-avatar">${initials(s.name)}</div>
+          <div style="flex:1;min-width:0">
+            <div class="person-name">${x(s.name)}</div>
+            <div class="person-detail">${x(s.email)}${s.homeName ? ` · ${x(s.homeName)}` : ""}</div>
+          </div>
+          <button class="person-remove" data-remove-shared="${s.id}" aria-label="Remove"><i data-lucide="x"></i></button>
+        </div>`).join("")
+    : `<div class="settings-person"><div class="person-detail" style="color:var(--text2);font-style:italic">No one added yet.</div></div>`;
+
+  const notifChecked = d.prefs.notifications ? "checked" : "";
+
+  const html = `
+    <!-- Profile card -->
+    <div class="profile-card" id="btn-edit-profile">
+      <div class="avatar">${ini}</div>
+      <div style="flex:1;min-width:0">
+        <div class="profile-name">${p.name ? x(p.name) : '<span style="color:var(--text2);font-style:italic">Add your name</span>'}</div>
+        <div class="profile-email">${p.email ? x(p.email) : '<span style="font-style:italic">Add your email</span>'}</div>
+      </div>
+      <div style="color:var(--text2);opacity:.5"><i data-lucide="chevron-right" style="width:16px;height:16px"></i></div>
+    </div>
+
+    <!-- Account -->
+    <div class="settings-section">
+      <div class="settings-section-title">Account</div>
+      <div class="settings-rows">
+        <div class="settings-row" id="btn-settings-password">
+          <div class="settings-row-icon" style="background:var(--bg3)"><i data-lucide="lock" style="color:var(--text2)"></i></div>
+          <div class="settings-row-body">
+            <div class="settings-row-label">Password</div>
+            <div class="settings-row-sub">Change your password</div>
+          </div>
+          <div class="settings-row-end"><i data-lucide="chevron-right"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admins -->
+    <div class="settings-section">
+      <div class="settings-section-title">Admins</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;line-height:1.4">People who can view and edit all your homes.</div>
+      <div class="settings-person-list">${adminRows}</div>
+      <div class="settings-add-row" id="btn-add-admin">
+        <i data-lucide="user-plus"></i> Add an admin
+      </div>
+    </div>
+
+    <!-- Shared with -->
+    <div class="settings-section">
+      <div class="settings-section-title">Shared With</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px;line-height:1.4">People who can view a home you've shared with them.</div>
+      <div class="settings-person-list">${sharedRows}</div>
+      <div class="settings-add-row" id="btn-add-shared">
+        <i data-lucide="share-2"></i> Share a home
+      </div>
+    </div>
+
+    <!-- Preferences -->
+    <div class="settings-section">
+      <div class="settings-section-title">Preferences</div>
+      <div class="toggle-row">
+        <div style="flex:1">
+          <div class="toggle-label">Notifications</div>
+          <div class="toggle-sub">Upkeep reminders and alerts</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="pref-notifications" ${notifChecked}>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Sign out -->
+    <button class="signout-btn" id="btn-sign-out">Sign Out</button>
+    <div style="height:20px"></div>
+  `;
+
+  document.getElementById("settings-body").innerHTML = html;
+
+  // Edit profile
+  document.getElementById("btn-edit-profile").addEventListener("click", openEditProfile);
+
+  // Notifications toggle
+  document.getElementById("pref-notifications").addEventListener("change", e => {
+    const d2 = ensureSettings(load());
+    d2.prefs.notifications = e.target.checked;
+    save(d2);
+  });
+
+  // Add admin
+  document.getElementById("btn-add-admin").addEventListener("click", () => openAddPerson("admin"));
+
+  // Add shared
+  document.getElementById("btn-add-shared").addEventListener("click", () => openAddPerson("shared"));
+
+  // Remove admin
+  document.querySelectorAll("[data-remove-admin]").forEach(btn =>
+    btn.addEventListener("click", e => { e.stopPropagation(); removePerson("admin", btn.dataset.removeAdmin); }));
+
+  // Remove shared
+  document.querySelectorAll("[data-remove-shared]").forEach(btn =>
+    btn.addEventListener("click", e => { e.stopPropagation(); removePerson("shared", btn.dataset.removeShared); }));
+
+  // Sign out (prototype — just clears data)
+  document.getElementById("btn-sign-out").addEventListener("click", () => {
+    confirm("Sign out?", "You'll be signed out of My House.", () => {
+      localStorage.clear(); location.reload();
+    }, "Sign Out");
+  });
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function openEditProfile() {
+  const d = ensureSettings(load());
+  document.getElementById("prof-name").value  = d.profile.name  || "";
+  document.getElementById("prof-email").value = d.profile.email || "";
+  go("s-edit-profile");
+}
+document.getElementById("back-from-edit-profile").addEventListener("click", () => { back(); renderSettingsTab(); });
+document.getElementById("save-profile-btn").addEventListener("click", () => {
+  const d = ensureSettings(load());
+  d.profile.name  = document.getElementById("prof-name").value.trim();
+  d.profile.email = document.getElementById("prof-email").value.trim();
+  save(d); toast("Profile saved"); back(); renderSettingsTab();
+});
+
+// Add person sheet (reuse a simple prompt approach)
+let _addingPersonType = "admin";
+function openAddPerson(type) {
+  _addingPersonType = type;
+  document.getElementById("add-person-name").value  = "";
+  document.getElementById("add-person-email").value = "";
+  document.getElementById("add-person-home").style.display  = type === "shared" ? "" : "none";
+  document.getElementById("add-person-title").textContent = type === "admin" ? "Add Admin" : "Share a Home";
+  document.getElementById("save-add-person-btn").textContent = type === "admin" ? "Add Admin" : "Share Home";
+  document.getElementById("add-person-sub").textContent     = type === "admin"
+    ? "This person can view and edit all your homes."
+    : "Choose a home and enter the person's details.";
+  // Populate home picker for shared
+  if (type === "shared") {
+    const d = load();
+    const sel = document.getElementById("add-person-home-select");
+    sel.innerHTML = d.homes.filter(h=>!h.shared).map(h =>
+      `<option value="${h.id}">${x(h.nickname || h.address || "Home")}</option>`
+    ).join("") || `<option value="">No homes available</option>`;
+  }
+  openSheet("add-person-sheet");
+}
+function removePerson(type, id) {
+  const d = ensureSettings(load());
+  if (type === "admin")  d.admins = d.admins.filter(a => a.id !== id);
+  if (type === "shared") d.shared = d.shared.filter(s => s.id !== id);
+  save(d); renderSettingsTab();
+}
+document.getElementById("save-add-person-btn").addEventListener("click", () => {
+  const name  = document.getElementById("add-person-name").value.trim();
+  const email = document.getElementById("add-person-email").value.trim();
+  if (!name && !email) { toast("Enter a name or email"); return; }
+  const d = ensureSettings(load());
+  if (_addingPersonType === "admin") {
+    d.admins.push({ id: uid(), name, email });
+  } else {
+    const homeId = document.getElementById("add-person-home-select").value;
+    const home = d.homes.find(h => h.id === homeId);
+    d.shared.push({ id: uid(), name, email, homeId, homeName: home ? (home.nickname || home.address || "Home") : "" });
+  }
+  save(d); closeAllSheets(); renderSettingsTab();
+  toast(_addingPersonType === "admin" ? "Admin added" : "Home shared");
+});
+document.getElementById("add-person-cancel").addEventListener("click", closeAllSheets);
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+(function init() {
+  const d = load();
+  // Give any owned home without a photo a random one
+  let changed = false;
+  d.homes.forEach(h => { if (!h.photo && !h.shared) { h.photo = randomHousePhoto(); changed = true; } });
+  if (changed) save(d);
+  if (d.homes.length) {
+    currentHomeId = d.activeHomeId || d.homes[0].id;
+  } else {
+    // First launch — go straight to add home
+    document.getElementById("back-from-add-home").style.display = "none";
+    go("s-add-home");
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+  switchTab("s-rooms");
+  if (window.lucide) lucide.createIcons();
+})();
+
+// ── Maintenance Log ──────────────────────────────────────────────────────────
+const MAINT_CATS = ["Plumbing","HVAC","Electrical","Roof","Well","Septic","Appliance","General","Custom"];
+function attachmentChip(att, maintId) {
+  if (!att) return "";
+  const icon = att.type === "pdf" ? "file-text" : "image";
+  const label = att.type === "pdf" ? "View PDF" : "View photo";
+  return `<a class="maint-attach-chip" href="${att.dataUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><i data-lucide="${icon}"></i>${label}</a>`;
+}
+
+let editingMaintId = null;
+let _maintAttachment = null; // { dataUrl, name, type }
+
+document.getElementById("back-from-maintenance").addEventListener("click", back);
+document.getElementById("back-from-add-maintenance").addEventListener("click", back);
+document.getElementById("btn-add-maintenance").addEventListener("click", openAddMaintenance);
+
+// ── Attachment upload ─────────────────────────────────────────────────────────
+document.getElementById("attach-zone").addEventListener("click", () =>
+  document.getElementById("m-attachment-input").click());
+
+document.getElementById("m-attachment-input").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const isPdf = file.type === "application/pdf";
+  const isImg = file.type.startsWith("image/");
+  if (!isPdf && !isImg) { toast("Please choose an image or PDF"); return; }
+
+  toast("Loading…");
+  const dataUrl = await new Promise((res, rej) => {
+    if (isImg) {
+      // Compress image the same way room photos are
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        const c = document.createElement("canvas"); c.width = w; c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        res(c.toDataURL("image/jpeg", 0.8));
+      };
+      img.onerror = rej;
+      img.src = url;
+    } else {
+      // PDF — store as base64 data URL directly (no compression)
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.onerror = rej;
+      reader.readAsDataURL(file);
+    }
+  });
+
+  _maintAttachment = { dataUrl, name: file.name, type: isPdf ? "pdf" : "image" };
+  renderAttachPreview();
+  document.getElementById("m-attachment-input").value = "";
+});
+
+function renderAttachPreview() {
+  const empty   = document.getElementById("attach-empty");
+  const preview = document.getElementById("attach-preview");
+  if (!_maintAttachment) {
+    empty.style.display = "";
+    preview.style.display = "none";
+    return;
+  }
+  empty.style.display = "none";
+  preview.style.display = "";
+  const { dataUrl, name, type } = _maintAttachment;
+  const thumb = type === "image"
+    ? `<img src="${dataUrl}" alt="">`
+    : `<div class="attach-pdf-icon"><i data-lucide="file-text"></i></div>`;
+  preview.innerHTML = `
+    ${thumb}
+    <div class="attach-info">
+      <div class="attach-filename">${x(name)}</div>
+      <div class="attach-filemeta">${type === "pdf" ? "PDF document" : "Image"} · tap to change</div>
+    </div>
+    <button class="attach-remove" id="btn-remove-attach" aria-label="Remove attachment"><i data-lucide="x"></i></button>
+  `;
+  document.getElementById("btn-remove-attach").addEventListener("click", e => {
+    e.stopPropagation(); _maintAttachment = null; renderAttachPreview();
+  });
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderMaintenance() {
+  const d = load();
+  if (!d.maintenance) { d.maintenance = []; save(d); }
+  const records = d.maintenance.filter(m => m.homeId === currentHomeId)
+    .sort((a,b) => (b.date||"").localeCompare(a.date||""));
+
+  let html = "";
+  if (!records.length) {
+    html = `<div class="maint-empty">No maintenance records yet.<br>Tap + to add one.</div>`;
+  } else {
+    records.forEach(m => {
+      const cost  = m.cost ? `<div class="maint-cost">$${parseFloat(m.cost).toFixed(2)}</div>` : "";
+      const prov  = m.provider ? `<div class="maint-meta">${m.provider}${m.contact ? " · " + m.contact : ""}</div>` : "";
+      const next  = m.nextDate ? `<div class="maint-next"><i data-lucide="bell" style="width:13px;height:13px;vertical-align:middle;margin-right:3px"></i> Next: ${fmtDate(m.nextDate)}</div>` : "";
+      const attachChip = m.attachment ? attachmentChip(m.attachment, m.id) : "";
+      html += `<div class="maint-card" onclick="openEditMaintenance('${m.id}')">
+        <div class="maint-header">
+          <span class="maint-cat">${m.category||"General"}</span>
+          <span class="maint-date-text">${fmtDate(m.date)}</span>
+        </div>
+        <div class="maint-desc">${x(m.desc||"")}</div>
+        ${prov}${cost}${next}${attachChip}
+      </div>`;
+    });
+  }
+  document.getElementById("maintenance-body").innerHTML = html;
+  if (window.lucide) lucide.createIcons();
+}
+
+function fmtDate(iso) {
+  if (!iso) return "";
+  const [y,mo,d] = iso.split("-");
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${months[parseInt(mo,10)-1]} ${parseInt(d,10)}, ${y}`;
+}
+
+function openAddMaintenance() {
+  editingMaintId = null;
+  document.getElementById("add-maintenance-title").textContent = "New Record";
+  document.getElementById("m-desc").value = "";
+  document.getElementById("m-date").value = new Date().toISOString().slice(0,10);
+  document.getElementById("m-cost").value = "";
+  document.getElementById("m-provider").value = "";
+  document.getElementById("m-contact").value = "";
+  document.getElementById("m-prod-brand").value = "";
+  document.getElementById("m-prod-model").value = "";
+  document.getElementById("m-prod-url").value = "";
+  document.getElementById("m-next-date").value = "";
+  document.getElementById("m-notes").value = "";
+  document.getElementById("delete-maintenance-btn").style.display = "none";
+  _maintAttachment = null; renderAttachPreview();
+  renderMaintCategoryChips("General");
+  go("s-add-maintenance");
+  if (window.lucide) lucide.createIcons();
+}
+
+function openEditMaintenance(id) {
+  const d = load();
+  if (!d.maintenance) d.maintenance = [];
+  const m = d.maintenance.find(rec => rec.id === id);
+  if (!m) return;
+  editingMaintId = id;
+  document.getElementById("add-maintenance-title").textContent = "Edit Record";
+  document.getElementById("m-desc").value = m.desc||"";
+  document.getElementById("m-date").value = m.date||"";
+  document.getElementById("m-cost").value = m.cost||"";
+  document.getElementById("m-provider").value = m.provider||"";
+  document.getElementById("m-contact").value = m.contact||"";
+  document.getElementById("m-prod-brand").value = m.prodBrand||"";
+  document.getElementById("m-prod-model").value = m.prodModel||"";
+  document.getElementById("m-prod-url").value = m.prodUrl||"";
+  document.getElementById("m-next-date").value = m.nextDate||"";
+  document.getElementById("m-notes").value = m.notes||"";
+  document.getElementById("delete-maintenance-btn").style.display = "";
+  _maintAttachment = m.attachment || null; renderAttachPreview();
+  renderMaintCategoryChips(m.category||"General");
+  go("s-add-maintenance");
+  if (window.lucide) lucide.createIcons();
+}
+
+let _maintCat = "General";
+function renderMaintCategoryChips(selected) {
+  _maintCat = selected;
+  document.getElementById("maint-category-chips").innerHTML = MAINT_CATS.map(c =>
+    `<button class="chip${c===_maintCat?" active":""}" onclick="selectMaintCat('${c}')">${c}</button>`
+  ).join("");
+}
+function selectMaintCat(c) { renderMaintCategoryChips(c); }
+
+document.getElementById("save-maintenance-btn").addEventListener("click", () => {
+  const desc = document.getElementById("m-desc").value.trim();
+  const date = document.getElementById("m-date").value;
+  if (!desc) { toast("Description is required"); return; }
+  const d = load();
+  if (!d.maintenance) d.maintenance = [];
+  const record = {
+    id: editingMaintId || uid(),
+    homeId: currentHomeId,
+    category: _maintCat,
+    desc,
+    date,
+    cost: document.getElementById("m-cost").value,
+    provider: document.getElementById("m-provider").value.trim(),
+    contact: document.getElementById("m-contact").value.trim(),
+    prodBrand: document.getElementById("m-prod-brand").value.trim(),
+    prodModel: document.getElementById("m-prod-model").value.trim(),
+    prodUrl: document.getElementById("m-prod-url").value.trim(),
+    nextDate: document.getElementById("m-next-date").value,
+    notes: document.getElementById("m-notes").value.trim(),
+    attachment: _maintAttachment || undefined,
+  };
+  if (editingMaintId) {
+    const idx = d.maintenance.findIndex(m => m.id === editingMaintId);
+    if (idx !== -1) d.maintenance[idx] = record;
+  } else {
+    d.maintenance.push(record);
+  }
+  save(d);
+  toast(editingMaintId ? "Record updated" : "Record saved");
+  back();
+});
+
+document.getElementById("delete-maintenance-btn").addEventListener("click", () => {
+  const d = load();
+  d.maintenance = (d.maintenance||[]).filter(m => m.id !== editingMaintId);
+  save(d);
+  toast("Record deleted");
+  back();
+});
+</script>
+</body>
+</html>
