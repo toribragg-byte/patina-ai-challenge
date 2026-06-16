@@ -789,27 +789,77 @@ async function syncFromSupabase() {
   save(d);
 }
 
-// Push local store to Supabase (upsert all)
+// Push local store to Supabase (sequential to respect foreign keys)
 async function syncToSupabase() {
   if (!_currentUser) return;
-  const uid = _currentUser.id;
+  const userId = _currentUser.id;
   const d = load();
 
-  const homes = d.homes.filter(h => !h.shared).map(h => ({ id: h.id, user_id: uid, name: h.nickname || h.address, address: h.address, type: h.type, photo: h.photo }));
-  const rooms = d.rooms.map(r => ({ id: r.id, home_id: r.homeId, user_id: uid, name: r.name, type: r.type, photo: r.photo }));
-  const finishes = d.finishes.map(f => ({ id: f.id, home_id: f.homeId || (d.rooms.find(r=>r.id===f.roomId)||{}).homeId, room_id: f.roomId, user_id: uid, name: f.name || f.product || f.colorName || f.type, type: f.type, brand: f.brand, color_name: f.colorName, color_code: f.colorCode, url: f.url, retailer: f.retailer, notes: f.notes, archived: f.archived || false, material: f.material, sku: f.sku }));
-  const maint = d.maintenance.map(m => ({ id: m.id, home_id: m.homeId, room_id: m.roomId || null, user_id: uid, title: m.desc, type: m.category, provider: m.provider, product: m.prodBrand, date: m.date, next_date: m.nextDate, notes: m.notes, attachment: m.attachment || null }));
-  const admins = d.admins.map(a => ({ id: a.id, owner_id: uid, home_id: d.homes[0]?.id || null, admin_name: a.name, admin_email: a.email }));
-  const shared = d.shared.map(s => ({ id: s.id, owner_id: uid, home_id: s.homeId, shared_name: s.name, shared_email: s.email }));
+  // 1. Homes first
+  const homes = d.homes.filter(h => !h.shared).map(h => ({
+    id: h.id, user_id: userId,
+    name: h.nickname || h.address || "Home",
+    address: h.address || "", type: h.type || "", photo: h.photo || ""
+  }));
+  if (homes.length) {
+    const { error } = await _sb.from("homes").upsert(homes);
+    if (error) { console.error("homes sync error", error); toast("Sync error: " + error.message); return; }
+  }
+
+  // 2. Rooms (depend on homes)
+  const rooms = d.rooms.map(r => ({
+    id: r.id, home_id: r.homeId, user_id: userId,
+    name: r.name, type: r.type || "", photo: r.photo || ""
+  }));
+  if (rooms.length) {
+    const { error } = await _sb.from("rooms").upsert(rooms);
+    if (error) { console.error("rooms sync error", error); }
+  }
+
+  // 3. Finishes, maintenance, admins, shared, profile in parallel
+  const roomHomeMap = {};
+  d.rooms.forEach(r => { roomHomeMap[r.id] = r.homeId; });
+
+  const finishes = d.finishes
+    .map(f => ({
+      id: f.id,
+      home_id: f.homeId || roomHomeMap[f.roomId],
+      room_id: f.roomId || null,
+      user_id: userId,
+      name: f.name || f.product || f.colorName || f.brand || f.type || "Finish",
+      type: f.type || "", brand: f.brand || "",
+      color_name: f.colorName || "", color_code: f.colorCode || "",
+      url: f.url || "", retailer: f.retailer || "",
+      notes: f.notes || "", archived: f.archived || false,
+      material: f.material || "", sku: f.sku || ""
+    }))
+    .filter(f => f.home_id);
+
+  const maint = d.maintenance.map(m => ({
+    id: m.id, home_id: m.homeId, room_id: m.roomId || null, user_id: userId,
+    title: m.desc || "Record", type: m.category || "",
+    provider: m.provider || "", product: m.prodBrand || "",
+    date: m.date || null, next_date: m.nextDate || null,
+    notes: m.notes || "", attachment: m.attachment || null
+  })).filter(m => m.home_id);
+
+  const admins = d.admins.map(a => ({
+    id: a.id, owner_id: userId,
+    home_id: homes[0]?.id || null,
+    admin_name: a.name || "", admin_email: a.email
+  })).filter(a => a.home_id);
+
+  const shared = d.shared.map(s => ({
+    id: s.id, owner_id: userId, home_id: s.homeId,
+    shared_name: s.name || "", shared_email: s.email
+  })).filter(s => s.home_id);
 
   await Promise.all([
-    homes.length  ? _sb.from("homes").upsert(homes) : Promise.resolve(),
-    rooms.length  ? _sb.from("rooms").upsert(rooms) : Promise.resolve(),
-    finishes.length ? _sb.from("finishes").upsert(finishes.filter(f=>f.home_id)) : Promise.resolve(),
-    maint.length  ? _sb.from("maintenance").upsert(maint) : Promise.resolve(),
-    admins.length ? _sb.from("home_admins").upsert(admins) : Promise.resolve(),
-    shared.length ? _sb.from("home_shared").upsert(shared) : Promise.resolve(),
-    _sb.from("profiles").upsert({ id: uid, name: d.profile?.name || "" }),
+    finishes.length ? _sb.from("finishes").upsert(finishes) : Promise.resolve(),
+    maint.length    ? _sb.from("maintenance").upsert(maint)  : Promise.resolve(),
+    admins.length   ? _sb.from("home_admins").upsert(admins) : Promise.resolve(),
+    shared.length   ? _sb.from("home_shared").upsert(shared) : Promise.resolve(),
+    _sb.from("profiles").upsert({ id: userId, name: d.profile?.name || "" }),
   ]);
 }
 
