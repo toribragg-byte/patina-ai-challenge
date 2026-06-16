@@ -982,7 +982,16 @@ document.getElementById("auth-set-password-btn").addEventListener("click", async
   const { error } = await _sb.auth.updateUser({ password });
   btn.textContent = "Set New Password"; btn.disabled = false;
   if (error) { setAuthError(error.message); }
-  else { setAuthError("Password updated! Signing you in…", true); }
+  else {
+    _passwordRecoveryMode = false;
+    setAuthError("Password updated! Signing you in…", true);
+    setTimeout(() => {
+      document.getElementById("auth-tab-login").classList.add("active");
+      document.getElementById("auth-tab-signup").classList.remove("active");
+      showAuthForm("auth-login-form");
+      setAuthError("");
+    }, 1500);
+  }
 });
 
 document.getElementById("auth-login-btn").addEventListener("click", async () => {
@@ -1011,13 +1020,17 @@ document.getElementById("auth-signup-btn").addEventListener("click", async () =>
 });
 
 // Listen for auth state changes
+let _passwordRecoveryMode = false;
+
 _sb.auth.onAuthStateChange(async (event, session) => {
   _currentUser = session?.user || null;
   if (event === "PASSWORD_RECOVERY") {
+    _passwordRecoveryMode = true;
     showAuth();
     showAuthForm("auth-new-password-form");
     return;
   }
+  if (_passwordRecoveryMode) return;
   if (_currentUser) {
     toast("Loading your homes…");
     await syncFromSupabase();
