@@ -1178,6 +1178,7 @@ function switchTab(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   setTabBar(id);
+  scrollToTop(id);
   if (id === "s-rooms")    { renderRoomsScreen(); }
   if (id === "s-upkeep")   { renderUpkeepTab(); }
   if (id === "s-decor")    { renderDecorTab(); }
@@ -1187,11 +1188,19 @@ function switchTab(id) {
 }
 
 // ── Nav ───────────────────────────────────────────────────────────────────────
+function scrollToTop(id) {
+  const screen = document.getElementById(id);
+  if (!screen) return;
+  const scrollable = screen.querySelector(".body, .form");
+  if (scrollable) scrollable.scrollTop = 0;
+}
+
 function go(id) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   setTabBar(id);
   if (navStack[navStack.length-1] !== id) navStack.push(id);
+  scrollToTop(id);
 }
 function back() {
   navStack.pop();
@@ -1199,6 +1208,7 @@ function back() {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   document.getElementById(prev).classList.add("active");
   setTabBar(prev);
+  scrollToTop(prev);
   if (prev === "s-rooms")       { renderRoomsScreen(); }
   if (prev === "s-upkeep")      { renderUpkeepTab(); }
   if (prev === "s-decor")       { renderDecorTab(); }
