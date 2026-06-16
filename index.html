@@ -800,7 +800,7 @@ async function syncFromSupabase() {
   d.homes = (homes || []).map(h => ({ id: h.id, address: h.address || "", nickname: h.name, type: h.type || "", photo: h.photo || "", shared: false }));
   d.rooms = (rooms || []).map(r => ({ id: r.id, homeId: r.home_id, name: r.name, type: r.type || "", photo: r.photo || "" }));
   d.finishes = (finishes || []).map(f => ({ id: f.id, roomId: f.room_id, homeId: f.home_id, type: f.type || "", brand: f.brand || "", product: f.product || "", colorName: f.color_name || "", colorCode: f.color_code || "", name: f.name || "", sheen: f.sheen || "", url: f.url || "", retailer: f.retailer || "", notes: f.notes || "", archived: f.archived || false, material: f.material || "", sku: f.sku || "", tileSize: f.tile_size || "", grout: f.grout || "", width: f.width || "", thickness: f.thickness || "", stock: f.stock || "unknown" }));
-  d.maintenance = (maintenance || []).map(m => ({ id: m.id, homeId: m.home_id, roomId: m.room_id, desc: m.title, category: m.type, provider: m.provider, prodBrand: m.product, date: m.date, nextDate: m.next_date, notes: m.notes, attachment: m.attachment }));
+  d.maintenance = (maintenance || []).map(m => ({ id: m.id, homeId: m.home_id, roomId: m.room_id, desc: m.title, category: m.type, provider: m.provider, contact: m.contact || "", cost: m.cost || "", prodBrand: m.product || "", prodModel: m.prod_model || "", prodUrl: m.prod_url || "", date: m.date, nextDate: m.next_date, notes: m.notes || "", attachment: m.attachment }));
   d.admins = (admins || []).map(a => ({ id: a.id, name: a.admin_name || "", email: a.admin_email }));
   d.shared = (shared || []).map(s => ({ id: s.id, name: s.shared_name || "", email: s.shared_email, homeId: s.home_id }));
   d.profile = { name: profile?.name || _currentUser.user_metadata?.name || "", email: _currentUser.email || "" };
@@ -860,7 +860,9 @@ async function syncToSupabase() {
   const maint = d.maintenance.map(m => ({
     id: m.id, home_id: m.homeId, room_id: m.roomId || null, user_id: userId,
     title: m.desc || "Record", type: m.category || "",
-    provider: m.provider || "", product: m.prodBrand || "",
+    provider: m.provider || "", contact: m.contact || "",
+    cost: m.cost || "", product: m.prodBrand || "",
+    prod_model: m.prodModel || "", prod_url: m.prodUrl || "",
     date: m.date || null, next_date: m.nextDate || null,
     notes: m.notes || "", attachment: m.attachment || null
   })).filter(m => m.home_id);
