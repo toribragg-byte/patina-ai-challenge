@@ -262,6 +262,17 @@
 
   /* Maintenance dashboard cards */
   .maint-empty { text-align: center; color: var(--text2); padding: 20px 0 4px; font-size: 14px; }
+
+  /* Upkeep filter bar */
+  .upkeep-filter-bar { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+  .upkeep-filter-bar::-webkit-scrollbar { display: none; }
+  .upkeep-filter-chip { flex-shrink: 0; padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--bg3); background: var(--bg); font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; }
+  .upkeep-filter-chip.active { background: var(--sage); border-color: var(--sage); color: #fff; }
+
+  /* Quick date buttons */
+  .quick-date-btns { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .quick-date-btn { padding: 6px 12px; border-radius: 20px; border: 1.5px solid var(--bg3); background: var(--bg2); font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; }
+  .quick-date-btn:active, .quick-date-btn.active { background: var(--sage); border-color: var(--sage); color: #fff; }
   .maint-dash-card { background: var(--bg2); border-radius: var(--r); padding: 14px 16px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 14px; }
   .maint-dash-card:active { opacity: .7; }
   .maint-dash-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
@@ -399,6 +410,9 @@
       </button>
       <span class="home-badge" id="header-home-badge-upkeep"></span>
       <button class="icon-btn" id="btn-add-maint-header" title="Add record"><i data-lucide="plus"></i></button>
+    </div>
+    <div class="upkeep-filter-bar" id="upkeep-filter-bar">
+      <button class="upkeep-filter-chip active" data-filter="All">All</button>
     </div>
     <div class="body" id="upkeep-body"></div>
   </div>
@@ -570,7 +584,17 @@
         <div class="field"><label>Model / part #</label><input type="text" id="m-prod-model" placeholder="e.g. MPR 1500"></div>
       </div>
       <div class="field"><label>Where to buy</label><input type="url" id="m-prod-url" placeholder="https://…"></div>
-      <div class="field"><label>Next service date</label><input type="date" id="m-next-date"></div>
+      <div class="field">
+        <label>Next service date</label>
+        <div class="quick-date-btns">
+          <button type="button" class="quick-date-btn" data-months="1">1 mo</button>
+          <button type="button" class="quick-date-btn" data-months="3">3 mo</button>
+          <button type="button" class="quick-date-btn" data-months="6">6 mo</button>
+          <button type="button" class="quick-date-btn" data-months="12">1 yr</button>
+          <button type="button" class="quick-date-btn" data-months="24">2 yr</button>
+        </div>
+        <input type="date" id="m-next-date">
+      </div>
       <div class="field"><label>Notes</label><textarea id="m-notes" placeholder="Any additional details…"></textarea></div>
       <div class="field">
         <label>Attachment <span style="font-weight:400;color:var(--text2)">(photo or PDF)</span></label>
@@ -1552,6 +1576,22 @@ function renderRoomsScreen() {
 }
 
 // ── Upkeep tab ────────────────────────────────────────────────────────────────
+let _upkeepFilter = "All";
+
+function renderUpkeepFilter(records) {
+  const cats = ["All", ...Array.from(new Set(records.map(m => m.category).filter(Boolean)))];
+  const bar = document.getElementById("upkeep-filter-bar");
+  bar.innerHTML = cats.map(c =>
+    `<button class="upkeep-filter-chip${_upkeepFilter === c ? " active" : ""}" data-filter="${c}">${c}</button>`
+  ).join("");
+  bar.querySelectorAll(".upkeep-filter-chip").forEach(btn =>
+    btn.addEventListener("click", () => {
+      _upkeepFilter = btn.dataset.filter;
+      renderUpkeepTab();
+    })
+  );
+}
+
 function renderUpkeepTab() {
   updateHomeHeader();
   const d = load();
@@ -1559,6 +1599,8 @@ function renderUpkeepTab() {
   if (!h) { document.getElementById("upkeep-body").innerHTML = `<div class="maint-empty">No home selected.</div>`; return; }
 
   const allMaint = sortedMaintForHome(d);
+  renderUpkeepFilter(allMaint);
+  const filtered = _upkeepFilter === "All" ? allMaint : allMaint.filter(m => m.category === _upkeepFilter);
   let html = "";
   if (!allMaint.length) {
     html = `
@@ -1568,8 +1610,10 @@ function renderUpkeepTab() {
         <div class="empty-state-sub">Track maintenance, repairs, and seasonal tasks so nothing slips through the cracks.</div>
         <button class="empty-state-btn" id="empty-add-maint-btn"><i data-lucide="plus"></i> Add first record</button>
       </div>`;
+  } else if (!filtered.length) {
+    html = `<div class="maint-empty" style="padding:40px 20px">No records in this category.</div>`;
   } else {
-    allMaint.forEach(m => {
+    filtered.forEach(m => {
       const diff = m.nextDate ? maintDiffDays(m.nextDate) : null;
       let badgeCls = "none", badgeLabel = "No next date";
       if (diff !== null) {
@@ -2341,6 +2385,18 @@ let _maintAttachment = null; // { dataUrl, name, type }
 document.getElementById("back-from-maintenance").addEventListener("click", back);
 document.getElementById("back-from-add-maintenance").addEventListener("click", back);
 document.getElementById("btn-add-maintenance").addEventListener("click", openAddMaintenance);
+
+// Quick date buttons
+document.querySelectorAll(".quick-date-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const months = parseInt(btn.dataset.months);
+    const d = new Date();
+    d.setMonth(d.getMonth() + months);
+    document.getElementById("m-next-date").value = d.toISOString().slice(0, 10);
+    document.querySelectorAll(".quick-date-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
 
 // ── Attachment upload ─────────────────────────────────────────────────────────
 document.getElementById("attach-zone").addEventListener("click", () =>
