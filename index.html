@@ -361,7 +361,7 @@
   <div class="auth-logo">patina</div>
   <div class="auth-tagline">Your home, documented.</div>
   <div class="auth-card">
-    <div class="auth-tabs">
+    <div class="auth-tabs" id="auth-tabs-row">
       <button class="auth-tab active" id="auth-tab-login">Sign In</button>
       <button class="auth-tab" id="auth-tab-signup">Create Account</button>
     </div>
@@ -369,12 +369,24 @@
       <div class="auth-field"><label>Email</label><input id="auth-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
       <div class="auth-field"><label>Password</label><input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password"></div>
       <button class="auth-submit" id="auth-login-btn">Sign In</button>
+      <button type="button" id="auth-forgot-link" style="background:none;border:none;width:100%;text-align:center;margin-top:12px;font-size:13px;color:var(--text2);cursor:pointer;padding:4px">Forgot password?</button>
     </div>
     <div id="auth-signup-form" style="display:none">
       <div class="auth-field"><label>Full Name</label><input id="auth-name" type="text" placeholder="Your name" autocomplete="name"></div>
       <div class="auth-field"><label>Email</label><input id="auth-email-signup" type="email" placeholder="you@email.com" autocomplete="email"></div>
       <div class="auth-field"><label>Password</label><input id="auth-password-signup" type="password" placeholder="Min. 6 characters" autocomplete="new-password"></div>
       <button class="auth-submit" id="auth-signup-btn">Create Account</button>
+    </div>
+    <div id="auth-forgot-form" style="display:none">
+      <div style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.5">Enter your email and we'll send you a link to reset your password.</div>
+      <div class="auth-field"><label>Email</label><input id="auth-reset-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
+      <button class="auth-submit" id="auth-reset-btn">Send Reset Link</button>
+      <button type="button" id="auth-back-to-login" style="background:none;border:none;width:100%;text-align:center;margin-top:12px;font-size:13px;color:var(--text2);cursor:pointer;padding:4px">← Back to sign in</button>
+    </div>
+    <div id="auth-new-password-form" style="display:none">
+      <div style="font-size:14px;color:var(--text2);margin-bottom:16px;line-height:1.5">Choose a new password for your account.</div>
+      <div class="auth-field"><label>New Password</label><input id="auth-new-password" type="password" placeholder="Min. 6 characters" autocomplete="new-password"></div>
+      <button class="auth-submit" id="auth-set-password-btn">Set New Password</button>
     </div>
     <div class="auth-error" id="auth-error"></div>
   </div>
@@ -923,19 +935,54 @@ function setAuthError(msg, isSuccess) {
   }
 }
 
+function showAuthForm(form) {
+  ["auth-login-form","auth-signup-form","auth-forgot-form","auth-new-password-form"].forEach(id =>
+    document.getElementById(id).style.display = id === form ? "" : "none");
+  const isMain = form === "auth-login-form" || form === "auth-signup-form";
+  document.getElementById("auth-tabs-row").style.display = isMain ? "" : "none";
+  setAuthError("");
+}
+
 document.getElementById("auth-tab-login").addEventListener("click", () => {
   document.getElementById("auth-tab-login").classList.add("active");
   document.getElementById("auth-tab-signup").classList.remove("active");
-  document.getElementById("auth-login-form").style.display = "";
-  document.getElementById("auth-signup-form").style.display = "none";
-  setAuthError("");
+  showAuthForm("auth-login-form");
 });
 document.getElementById("auth-tab-signup").addEventListener("click", () => {
   document.getElementById("auth-tab-signup").classList.add("active");
   document.getElementById("auth-tab-login").classList.remove("active");
-  document.getElementById("auth-signup-form").style.display = "";
-  document.getElementById("auth-login-form").style.display = "none";
-  setAuthError("");
+  showAuthForm("auth-signup-form");
+});
+document.getElementById("auth-forgot-link").addEventListener("click", () => {
+  document.getElementById("auth-reset-email").value = document.getElementById("auth-email").value;
+  showAuthForm("auth-forgot-form");
+});
+document.getElementById("auth-back-to-login").addEventListener("click", () => {
+  document.getElementById("auth-tab-login").classList.add("active");
+  document.getElementById("auth-tab-signup").classList.remove("active");
+  showAuthForm("auth-login-form");
+});
+document.getElementById("auth-reset-btn").addEventListener("click", async () => {
+  const email = document.getElementById("auth-reset-email").value.trim();
+  if (!email) { setAuthError("Please enter your email."); return; }
+  const btn = document.getElementById("auth-reset-btn");
+  btn.textContent = "Sending…"; btn.disabled = true;
+  const { error } = await _sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname,
+  });
+  btn.textContent = "Send Reset Link"; btn.disabled = false;
+  if (error) { setAuthError(error.message); }
+  else { setAuthError("Check your email for a reset link.", true); }
+});
+document.getElementById("auth-set-password-btn").addEventListener("click", async () => {
+  const password = document.getElementById("auth-new-password").value;
+  if (password.length < 6) { setAuthError("Password must be at least 6 characters."); return; }
+  const btn = document.getElementById("auth-set-password-btn");
+  btn.textContent = "Saving…"; btn.disabled = true;
+  const { error } = await _sb.auth.updateUser({ password });
+  btn.textContent = "Set New Password"; btn.disabled = false;
+  if (error) { setAuthError(error.message); }
+  else { setAuthError("Password updated! Signing you in…", true); }
 });
 
 document.getElementById("auth-login-btn").addEventListener("click", async () => {
@@ -966,6 +1013,11 @@ document.getElementById("auth-signup-btn").addEventListener("click", async () =>
 // Listen for auth state changes
 _sb.auth.onAuthStateChange(async (event, session) => {
   _currentUser = session?.user || null;
+  if (event === "PASSWORD_RECOVERY") {
+    showAuth();
+    showAuthForm("auth-new-password-form");
+    return;
+  }
   if (_currentUser) {
     toast("Loading your homes…");
     await syncFromSupabase();
