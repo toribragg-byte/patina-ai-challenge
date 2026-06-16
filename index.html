@@ -1020,7 +1020,7 @@ document.getElementById("auth-signup-btn").addEventListener("click", async () =>
 });
 
 // Listen for auth state changes
-let _passwordRecoveryMode = false;
+let _passwordRecoveryMode = window.location.hash.includes("type=recovery");
 
 _sb.auth.onAuthStateChange(async (event, session) => {
   _currentUser = session?.user || null;
