@@ -963,7 +963,8 @@ function load() {
 }
 function save(d) {
   localStorage.setItem("myhouse2", JSON.stringify(d));
-  if (_currentUser) syncToSupabase().catch(console.error);
+  console.log("save() called, user:", _currentUser?.id || "null");
+  if (_currentUser) syncToSupabase().catch(e => console.error("syncToSupabase threw:", e));
 }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function newStore() { return { homes: [], rooms: [], finishes: [], maintenance: [], activeHomeId: null, profile: { name: "", email: "" }, admins: [], shared: [], prefs: { notifications: true, theme: "warm" } }; }
