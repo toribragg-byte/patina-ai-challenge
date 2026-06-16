@@ -36,7 +36,7 @@
   .auth-field input:focus { border-color: var(--accent); }
   .auth-submit { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: var(--r-sm); font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; }
   .auth-submit:active { opacity: .85; }
-  .auth-error { font-size: 13px; color: #B53A2F; text-align: center; margin-top: 10px; min-height: 18px; }
+  .auth-error { font-size: 13px; color: #B53A2F; text-align: center; margin-top: 10px; display: none; }
   .app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
   .screen { flex: 1; display: none; flex-direction: column; overflow: hidden; }
   .screen.active { display: flex; }
@@ -822,7 +822,17 @@ function showApp() {
   document.getElementById("auth-screen").classList.remove("active");
   document.getElementById("app").style.display = "";
 }
-function setAuthError(msg) { document.getElementById("auth-error").textContent = msg || ""; }
+function setAuthError(msg, isSuccess) {
+  const el = document.getElementById("auth-error");
+  if (msg) {
+    el.textContent = msg;
+    el.style.color = isSuccess ? "var(--sage)" : "#B53A2F";
+    el.style.display = "block";
+  } else {
+    el.textContent = "";
+    el.style.display = "none";
+  }
+}
 
 document.getElementById("auth-tab-login").addEventListener("click", () => {
   document.getElementById("auth-tab-login").classList.add("active");
@@ -860,8 +870,8 @@ document.getElementById("auth-signup-btn").addEventListener("click", async () =>
   btn.textContent = "Creating account…"; btn.disabled = true;
   const { error } = await _sb.auth.signUp({ email, password, options: { data: { name } } });
   btn.textContent = "Create Account"; btn.disabled = false;
-  if (error) { setAuthError(error.message); }
-  else { setAuthError(""); document.getElementById("auth-error").style.color = "var(--sage)"; document.getElementById("auth-error").textContent = "Check your email to confirm your account, then sign in."; }
+  if (error) { setAuthError(error.message || "Something went wrong. Please try again."); }
+  else { setAuthError("Account created! Check your email to confirm, then sign in.", true); }
 });
 
 // Listen for auth state changes
