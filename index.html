@@ -1220,7 +1220,7 @@ function deleteCurrentHome() {
   if (d.homes.length) { d.activeHomeId = d.homes[0].id; currentHomeId = d.homes[0].id; }
   else { d.activeHomeId = null; currentHomeId = null; }
   save(d);
-  if (_currentUser) _sb.from("homes").delete().eq("id", id).then(({error}) => { if(error) console.error("delete home error", error); });
+  if (_currentUser) _sb.from("homes").delete().eq("id", id).then(({error, status, statusText}) => { console.log("delete home", {error, status, statusText}); if(error) toast("Sync error: " + error.message); });
   toast("Home removed");
   switchTab("s-rooms");
 }
