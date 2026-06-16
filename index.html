@@ -348,6 +348,21 @@
   .room-hero-cam { position: absolute; bottom: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,.55); backdrop-filter: blur(4px); border: 1.5px solid rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; }
   .room-hero-cam svg.lucide, .house-photo-cam svg.lucide { width: 16px; height: 16px; stroke-width: 2; }
 
+  /* Segment control */
+  .segment-control { display: flex; background: var(--bg3); border-radius: 10px; padding: 3px; margin: 0 20px 0; flex-shrink: 0; }
+  .segment-btn { flex: 1; padding: 7px 4px; border: none; border-radius: 8px; background: none; font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all .15s; }
+  .segment-btn.active { background: var(--accent); color: #fff; }
+  .segment-btn:active:not(.active) { opacity: .7; }
+
+  /* Item / Appliance cards */
+  .item-card { background: var(--bg2); border-radius: var(--r); padding: 16px; margin-bottom: 10px; cursor: pointer; }
+  .item-card:active { opacity: .8; }
+  .item-card-name { font-size: 16px; font-weight: 600; color: var(--text); }
+  .item-card-sub { font-size: 13px; color: var(--text2); margin-top: 3px; }
+  .item-card-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .item-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--accent); background: rgba(155,77,46,.1); border-radius: 6px; padding: 3px 8px; text-decoration: none; }
+  .item-chip svg.lucide { width: 12px; height: 12px; }
+
   /* Confirm sheet */
   .confirm-body { padding: 16px 20px 4px; }
   .confirm-body h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
@@ -454,12 +469,21 @@
       <span class="header-title" id="room-detail-name"></span>
       <button class="icon-btn" id="btn-room-menu"><i data-lucide="more-horizontal"></i></button>
       <button class="icon-btn" id="btn-add-finish"><i data-lucide="plus"></i></button>
+      <button class="icon-btn" id="btn-add-item" style="display:none"><i data-lucide="plus"></i></button>
+      <button class="icon-btn" id="btn-add-appliance" style="display:none"><i data-lucide="plus"></i></button>
     </div>
     <div class="room-hero" id="room-hero">
       <div class="room-hero-placeholder" id="room-hero-placeholder"><i data-lucide="house"></i></div>
       <div class="room-hero-cam" id="room-hero-cam" title="Change photo"><i data-lucide="camera"></i></div>
     </div>
+    <div class="segment-control" id="room-segment-control" style="margin-bottom:12px;margin-top:14px">
+      <button class="segment-btn active" data-seg="finishes">Finishes</button>
+      <button class="segment-btn" data-seg="items">Items</button>
+      <button class="segment-btn" data-seg="appliances">Appliances</button>
+    </div>
     <div class="body" id="finishes-body"></div>
+    <div class="body" id="items-body" style="display:none"></div>
+    <div class="body" id="appliances-body" style="display:none"></div>
   </div>
 
   <!-- ── Finish detail (read-only) ─────────── -->
@@ -483,6 +507,65 @@
       <div id="finish-fields"></div>
       <button class="btn btn-primary" id="save-finish-btn" style="margin-top:6px">Save Finish</button>
       <button class="btn btn-danger" id="delete-finish-btn" style="display:none;margin-top:8px">Delete Finish</button>
+    </div>
+  </div>
+
+  <!-- ── Add / edit item ───────────────────── -->
+  <div class="screen" id="s-add-item">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-add-item"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title" id="add-item-title">New Item</span>
+    </div>
+    <div class="form">
+      <div class="field"><label>Item name *</label><input type="text" id="item-name" placeholder="e.g. Sofa, Coffee Table"></div>
+      <div class="row">
+        <div class="field"><label>Brand</label><input type="text" id="item-brand" placeholder="e.g. IKEA"></div>
+        <div class="field"><label>Model / SKU</label><input type="text" id="item-sku" placeholder="e.g. SÖDERHAMN"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Purchase date</label><input type="date" id="item-purchase-date"></div>
+        <div class="field"><label>Price paid</label><input type="number" id="item-price" placeholder="0.00"></div>
+      </div>
+      <div class="field"><label>Retailer</label><input type="text" id="item-retailer" placeholder="e.g. IKEA, Wayfair"></div>
+      <div class="field"><label>Purchase URL</label><input type="url" id="item-url" placeholder="https://…"></div>
+      <div class="field"><label>Notes</label><textarea id="item-notes" placeholder="Any details worth remembering…"></textarea></div>
+      <div class="field">
+        <label>Photo</label>
+        <div class="attach-zone" id="item-photo-zone">
+          <div class="attach-empty" id="item-photo-empty">
+            <i data-lucide="image"></i>
+            <span>Tap to add a photo</span>
+          </div>
+          <div class="attach-preview" id="item-photo-preview" style="display:none"></div>
+        </div>
+        <input type="file" id="item-photo-input" accept="image/*" style="display:none">
+      </div>
+      <button class="btn btn-primary" id="save-item-btn" style="margin-top:6px">Save Item</button>
+      <button class="btn btn-danger" id="delete-item-btn" style="display:none;margin-top:8px">Delete Item</button>
+    </div>
+  </div>
+
+  <!-- ── Add / edit appliance ───────────────── -->
+  <div class="screen" id="s-add-appliance">
+    <div class="header">
+      <button class="back-btn" aria-label="Back" id="back-from-add-appliance"><i data-lucide="chevron-left"></i></button>
+      <span class="header-title" id="add-appliance-title">New Appliance</span>
+    </div>
+    <div class="form">
+      <div class="field"><label>Appliance name *</label><input type="text" id="appl-name" placeholder="e.g. Refrigerator, Dishwasher"></div>
+      <div class="row">
+        <div class="field"><label>Brand</label><input type="text" id="appl-brand" placeholder="e.g. Bosch"></div>
+        <div class="field"><label>Model number</label><input type="text" id="appl-model" placeholder="e.g. SHPM88Z75N"></div>
+      </div>
+      <div class="field"><label>Serial number</label><input type="text" id="appl-serial" placeholder="e.g. 123456789"></div>
+      <div class="row">
+        <div class="field"><label>Purchase date</label><input type="date" id="appl-purchase-date"></div>
+        <div class="field"><label>Warranty expiry</label><input type="date" id="appl-warranty-date"></div>
+      </div>
+      <div class="field"><label>Manual URL</label><input type="url" id="appl-manual-url" placeholder="https://…"></div>
+      <div class="field"><label>Notes</label><textarea id="appl-notes" placeholder="Any details worth remembering…"></textarea></div>
+      <button class="btn btn-primary" id="save-appliance-btn" style="margin-top:6px">Save Appliance</button>
+      <button class="btn btn-danger" id="delete-appliance-btn" style="display:none;margin-top:8px">Delete Appliance</button>
     </div>
   </div>
 
@@ -672,8 +755,8 @@
       <span>Upkeep</span>
     </button>
     <button class="tab-btn" data-tab="s-decor" id="tab-decor">
-      <span class="tab-icon"><i data-lucide="paintbrush"></i></span>
-      <span>Decor</span>
+      <span class="tab-icon"><i data-lucide="layout-grid"></i></span>
+      <span>Rooms</span>
     </button>
     <button class="tab-btn" data-tab="s-settings" id="tab-settings">
       <span class="tab-icon"><i data-lucide="user"></i></span>
@@ -1061,12 +1144,14 @@ function save(d) {
   if (_currentUser) syncToSupabase().catch(console.error);
 }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function newStore() { return { homes: [], rooms: [], finishes: [], maintenance: [], activeHomeId: null, profile: { name: "", email: "" }, admins: [], shared: [], prefs: { notifications: true, theme: "warm" } }; }
+function newStore() { return { homes: [], rooms: [], finishes: [], maintenance: [], items: [], appliances: [], activeHomeId: null, profile: { name: "", email: "" }, admins: [], shared: [], prefs: { notifications: true, theme: "warm" } }; }
 function ensureSettings(d) {
-  if (!d.profile) d.profile = { name: "", email: "" };
-  if (!d.admins)  d.admins  = [];
-  if (!d.shared)  d.shared  = [];
-  if (!d.prefs)   d.prefs   = { notifications: true, theme: "warm" };
+  if (!d.profile)    d.profile    = { name: "", email: "" };
+  if (!d.admins)     d.admins     = [];
+  if (!d.shared)     d.shared     = [];
+  if (!d.prefs)      d.prefs      = { notifications: true, theme: "warm" };
+  if (!d.items)      d.items      = [];
+  if (!d.appliances) d.appliances = [];
   return d;
 }
 
@@ -1134,7 +1219,7 @@ function pickRoomPhoto(roomId) {
     const r = d.rooms.find(r => r.id === roomId);
     if (r) { r.photo = dataUrl; save(d); }
     renderRoomsScreen();
-    renderFinishes();
+    renderRoomSegment();
     _photoInput.value = "";
   };
   _photoInput.click();
@@ -1152,6 +1237,10 @@ let selStock = "unknown";
 let selMaterial = "";
 let archiveOpen = false;
 let _formValues = {};
+let currentRoomSegment = "finishes"; // "finishes" | "items" | "appliances"
+let editingItemId = null;
+let editingApplianceId = null;
+let _itemPhoto = null; // { dataUrl }
 
 // ── Tab bar ───────────────────────────────────────────────────────────────────
 const TAB_ROOTS = new Set(["s-rooms", "s-upkeep", "s-decor", "s-settings"]);
@@ -1212,7 +1301,7 @@ function back() {
   if (prev === "s-rooms")       { renderRoomsScreen(); }
   if (prev === "s-upkeep")      { renderUpkeepTab(); }
   if (prev === "s-decor")       { renderDecorTab(); }
-  if (prev === "s-room")        { renderFinishes(); }
+  if (prev === "s-room")        { renderRoomSegment(); }
   if (prev === "s-house-info")  { renderHouseInfo(); }
   if (prev === "s-maintenance") { renderMaintenance(); }
 }
@@ -1771,18 +1860,63 @@ function saveRoom() {
     save(d); toast("Room updated");
     currentRoomId = editingRoomId;
     navStack = navStack.filter(s => s !== "s-add-room");
-    renderFinishes(); go("s-room");
+    renderRoomSegment(); go("s-room");
   } else {
     const r = { id: uid(), homeId: currentHomeId, name, type: document.getElementById("room-type").value.trim(), notes: document.getElementById("room-notes").value.trim() };
     d.rooms.push(r); save(d); toast("Room added");
     currentRoomId = r.id;
     navStack = navStack.filter(s => s !== "s-add-room");
     navStack.push("s-room");
-    renderFinishes(); go("s-room");
+    renderRoomSegment(); go("s-room");
   }
 }
 
-function openRoom(id) { currentRoomId = id; renderFinishes(); go("s-room"); }
+function openRoom(id) { currentRoomId = id; currentRoomSegment = "finishes"; renderRoomSegment(); go("s-room"); }
+
+function setRoomSegment(seg) {
+  currentRoomSegment = seg;
+  // Update segment buttons
+  document.querySelectorAll("#room-segment-control .segment-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.seg === seg));
+  // Show/hide bodies
+  document.getElementById("finishes-body").style.display  = seg === "finishes"   ? "" : "none";
+  document.getElementById("items-body").style.display     = seg === "items"      ? "" : "none";
+  document.getElementById("appliances-body").style.display = seg === "appliances" ? "" : "none";
+  // Show/hide add buttons
+  document.getElementById("btn-add-finish").style.display    = seg === "finishes"   ? "" : "none";
+  document.getElementById("btn-add-item").style.display      = seg === "items"      ? "" : "none";
+  document.getElementById("btn-add-appliance").style.display = seg === "appliances" ? "" : "none";
+  // Render the active section
+  if (seg === "finishes")   renderFinishes();
+  if (seg === "items")      renderItems();
+  if (seg === "appliances") renderAppliances();
+}
+
+function renderRoomSegment() {
+  // Render room hero + name (shared across all segments)
+  const { rooms } = load();
+  const room = rooms.find(r => r.id === currentRoomId);
+  document.getElementById("room-detail-name").textContent = room ? room.name : "Room";
+  const hero = document.getElementById("room-hero");
+  const placeholder = document.getElementById("room-hero-placeholder");
+  if (room && room.photo) {
+    let img = hero.querySelector("img.hero-img");
+    if (!img) { img = document.createElement("img"); img.className = "hero-img"; img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;"; hero.insertBefore(img, hero.firstChild); }
+    img.src = room.photo;
+    placeholder.style.display = "none";
+  } else {
+    const img = hero.querySelector("img.hero-img");
+    if (img) img.remove();
+    placeholder.style.display = "";
+    placeholder.innerHTML = roomIcon(room?.type);
+  }
+  setRoomSegment(currentRoomSegment);
+  if (window.lucide) lucide.createIcons();
+}
+
+// Segment control
+document.querySelectorAll("#room-segment-control .segment-btn").forEach(b =>
+  b.addEventListener("click", () => setRoomSegment(b.dataset.seg)));
 
 // Room menu
 document.getElementById("btn-room-menu").addEventListener("click", () => {
@@ -1806,9 +1940,11 @@ document.getElementById("back-from-room").addEventListener("click", back);
 
 function deleteRoom() {
   const id = currentRoomId;
-  const d = load();
+  const d = ensureSettings(load());
   d.rooms = d.rooms.filter(r => r.id !== id);
   d.finishes = d.finishes.filter(f => f.roomId !== id);
+  d.items = d.items.filter(i => i.roomId !== id);
+  d.appliances = d.appliances.filter(a => a.roomId !== id);
   localStorage.setItem("myhouse2", JSON.stringify(d));
   if (_currentUser) _sb.from("rooms").delete().eq("id", id).then(({error}) => { if(error) console.error("delete room error", error); else syncToSupabase().catch(console.error); });
   toast("Room deleted");
@@ -1948,22 +2084,6 @@ function swatchColor(f) {
 function renderFinishes() {
   const { rooms, finishes } = load();
   const room = rooms.find(r => r.id === currentRoomId);
-  document.getElementById("room-detail-name").textContent = room ? room.name : "Room";
-
-  // Update hero image
-  const hero = document.getElementById("room-hero");
-  const placeholder = document.getElementById("room-hero-placeholder");
-  if (room && room.photo) {
-    let img = hero.querySelector("img.hero-img");
-    if (!img) { img = document.createElement("img"); img.className = "hero-img"; img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;"; hero.insertBefore(img, hero.firstChild); }
-    img.src = room.photo;
-    placeholder.style.display = "none";
-  } else {
-    const img = hero.querySelector("img.hero-img");
-    if (img) img.remove();
-    placeholder.style.display = "";
-    placeholder.innerHTML = roomIcon(room?.type);
-  }
   const rf = finishes.filter(f => f.roomId === currentRoomId);
 
   const active   = rf.filter(f => !f.archived);
@@ -2153,14 +2273,14 @@ function archiveFinish(id) {
   const d = load();
   const f = d.finishes.find(f => f.id === id);
   if (f) { f.archived = true; f.archivedAt = new Date().toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"}); }
-  save(d); toast("Finish archived"); renderFinishes();
+  save(d); toast("Finish archived"); renderRoomSegment();
 }
 
 function restoreFinish(id) {
   const d = load();
   const f = d.finishes.find(f => f.id === id);
   if (f) { delete f.archived; delete f.archivedAt; }
-  save(d); toast("Finish restored"); renderFinishes();
+  save(d); toast("Finish restored"); renderRoomSegment();
 }
 document.getElementById("btn-add-finish").addEventListener("click", openAddFinish);
 document.getElementById("room-hero-cam").addEventListener("click", () => pickRoomPhoto(currentRoomId));
@@ -2197,15 +2317,268 @@ function saveFinish() {
   else d.finishes.push(finish);
   save(d); toast(editingFinishId?"Finish updated":"Finish added");
   navStack=navStack.filter(s=>s!=="s-add-finish");
-  renderFinishes(); go("s-room");
+  currentRoomSegment = "finishes"; renderRoomSegment(); go("s-room");
 }
 
 function deleteFinish(id) {
   const d=load(); d.finishes=d.finishes.filter(f=>f.id!==id);
   localStorage.setItem("myhouse2", JSON.stringify(d));
   if (_currentUser) _sb.from("finishes").delete().eq("id", id).then(({error}) => { if(error) console.error("delete finish error", error); else syncToSupabase().catch(console.error); });
-  toast("Finish deleted"); renderFinishes();
+  toast("Finish deleted"); renderRoomSegment();
 }
+
+// ── Items ─────────────────────────────────────────────────────────────────────
+function renderItems() {
+  const d = ensureSettings(load());
+  const items = d.items.filter(it => it.roomId === currentRoomId);
+  let html = "";
+  if (!items.length) {
+    html = `<div class="empty-state">
+      <div class="empty-state-icon"><i data-lucide="shopping-bag"></i></div>
+      <div class="empty-state-title">No items yet</div>
+      <div class="empty-state-sub">Track furniture, decor, and accessories — with purchase info and photos.</div>
+      <button class="empty-state-btn" id="empty-add-item-btn"><i data-lucide="plus"></i> Add first item</button>
+    </div>`;
+  } else {
+    items.forEach(it => {
+      const sub = [it.brand, it.sku].filter(Boolean).join(" · ");
+      const price = it.price ? `$${parseFloat(it.price).toFixed(2)}` : "";
+      const chips = [];
+      if (it.url) chips.push(`<a class="item-chip" href="${x(it.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><i data-lucide="shopping-cart"></i> Buy Again</a>`);
+      html += `<div class="item-card" data-item-id="${it.id}">
+        ${it.photo ? `<img src="${it.photo}" alt="" style="width:100%;height:140px;object-fit:cover;border-radius:10px;margin-bottom:10px;display:block">` : ""}
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div class="item-card-name">${x(it.name)}</div>
+          ${price ? `<div style="font-size:14px;font-weight:600;color:var(--text2);flex-shrink:0">${x(price)}</div>` : ""}
+        </div>
+        ${sub ? `<div class="item-card-sub">${x(sub)}</div>` : ""}
+        ${it.retailer ? `<div class="item-card-sub">${x(it.retailer)}</div>` : ""}
+        ${chips.length ? `<div class="item-card-chips">${chips.join("")}</div>` : ""}
+      </div>`;
+    });
+  }
+  document.getElementById("items-body").innerHTML = html;
+  document.querySelectorAll(".item-card[data-item-id]").forEach(c =>
+    c.addEventListener("click", () => openEditItem(c.dataset.itemId)));
+  const emptyBtn = document.getElementById("empty-add-item-btn");
+  if (emptyBtn) emptyBtn.addEventListener("click", openAddItem);
+  if (window.lucide) lucide.createIcons();
+}
+
+function openAddItem() {
+  editingItemId = null; _itemPhoto = null;
+  document.getElementById("add-item-title").textContent = "New Item";
+  document.getElementById("item-name").value = "";
+  document.getElementById("item-brand").value = "";
+  document.getElementById("item-sku").value = "";
+  document.getElementById("item-purchase-date").value = "";
+  document.getElementById("item-price").value = "";
+  document.getElementById("item-retailer").value = "";
+  document.getElementById("item-url").value = "";
+  document.getElementById("item-notes").value = "";
+  document.getElementById("delete-item-btn").style.display = "none";
+  renderItemPhotoPreview();
+  go("s-add-item");
+}
+
+function openEditItem(id) {
+  const d = ensureSettings(load());
+  const it = d.items.find(i => i.id === id);
+  if (!it) return;
+  editingItemId = id;
+  _itemPhoto = it.photo ? { dataUrl: it.photo } : null;
+  document.getElementById("add-item-title").textContent = "Edit Item";
+  document.getElementById("item-name").value = it.name || "";
+  document.getElementById("item-brand").value = it.brand || "";
+  document.getElementById("item-sku").value = it.sku || "";
+  document.getElementById("item-purchase-date").value = it.purchaseDate || "";
+  document.getElementById("item-price").value = it.price || "";
+  document.getElementById("item-retailer").value = it.retailer || "";
+  document.getElementById("item-url").value = it.url || "";
+  document.getElementById("item-notes").value = it.notes || "";
+  document.getElementById("delete-item-btn").style.display = "";
+  renderItemPhotoPreview();
+  go("s-add-item");
+}
+
+function renderItemPhotoPreview() {
+  const empty   = document.getElementById("item-photo-empty");
+  const preview = document.getElementById("item-photo-preview");
+  if (!_itemPhoto) {
+    empty.style.display = ""; preview.style.display = "none"; return;
+  }
+  empty.style.display = "none"; preview.style.display = "";
+  preview.innerHTML = `
+    <img src="${_itemPhoto.dataUrl}" alt="" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0">
+    <div class="attach-info"><div class="attach-filename">Photo</div><div class="attach-filemeta">Tap to change</div></div>
+    <button class="attach-remove" id="btn-remove-item-photo" aria-label="Remove"><i data-lucide="x"></i></button>`;
+  document.getElementById("btn-remove-item-photo").addEventListener("click", e => {
+    e.stopPropagation(); _itemPhoto = null; renderItemPhotoPreview();
+  });
+  if (window.lucide) lucide.createIcons();
+}
+
+document.getElementById("item-photo-zone").addEventListener("click", () =>
+  document.getElementById("item-photo-input").click());
+document.getElementById("item-photo-input").addEventListener("change", async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  toast("Loading…");
+  const dataUrl = await compressImage(file);
+  _itemPhoto = { dataUrl };
+  renderItemPhotoPreview();
+  document.getElementById("item-photo-input").value = "";
+});
+
+document.getElementById("back-from-add-item").addEventListener("click", back);
+document.getElementById("save-item-btn").addEventListener("click", () => {
+  const name = document.getElementById("item-name").value.trim();
+  if (!name) { toast("Item name is required"); return; }
+  const d = ensureSettings(load());
+  const item = {
+    id: editingItemId || uid(),
+    homeId: currentHomeId,
+    roomId: currentRoomId,
+    name,
+    brand: document.getElementById("item-brand").value.trim(),
+    sku: document.getElementById("item-sku").value.trim(),
+    purchaseDate: document.getElementById("item-purchase-date").value,
+    price: document.getElementById("item-price").value,
+    retailer: document.getElementById("item-retailer").value.trim(),
+    url: document.getElementById("item-url").value.trim(),
+    notes: document.getElementById("item-notes").value.trim(),
+    photo: _itemPhoto ? _itemPhoto.dataUrl : "",
+  };
+  if (editingItemId) {
+    const idx = d.items.findIndex(i => i.id === editingItemId);
+    if (idx > -1) d.items[idx] = item;
+  } else {
+    d.items.push(item);
+  }
+  save(d); toast(editingItemId ? "Item updated" : "Item added");
+  navStack = navStack.filter(s => s !== "s-add-item");
+  currentRoomSegment = "items"; renderRoomSegment(); go("s-room");
+});
+document.getElementById("delete-item-btn").addEventListener("click", () => {
+  const id = editingItemId;
+  confirm("Delete item?", "This item will be permanently removed.", () => {
+    const d = ensureSettings(load());
+    d.items = d.items.filter(i => i.id !== id);
+    save(d); toast("Item deleted");
+    navStack = navStack.filter(s => s !== "s-add-item");
+    currentRoomSegment = "items"; renderRoomSegment(); go("s-room");
+  });
+});
+
+document.getElementById("btn-add-item").addEventListener("click", openAddItem);
+
+// ── Appliances ────────────────────────────────────────────────────────────────
+function renderAppliances() {
+  const d = ensureSettings(load());
+  const appliances = d.appliances.filter(a => a.roomId === currentRoomId);
+  let html = "";
+  if (!appliances.length) {
+    html = `<div class="empty-state">
+      <div class="empty-state-icon"><i data-lucide="microwave"></i></div>
+      <div class="empty-state-title">No appliances yet</div>
+      <div class="empty-state-sub">Track appliances with model numbers, warranties, and manuals.</div>
+      <button class="empty-state-btn" id="empty-add-appl-btn"><i data-lucide="plus"></i> Add first appliance</button>
+    </div>`;
+  } else {
+    appliances.forEach(a => {
+      const sub = [a.brand, a.model].filter(Boolean).join(" · ");
+      const warranty = a.warrantyDate ? `Warranty: ${fmtDate(a.warrantyDate)}` : "";
+      const chips = [];
+      if (a.manualUrl) chips.push(`<a class="item-chip" href="${x(a.manualUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()"><i data-lucide="book-open"></i> View Manual</a>`);
+      html += `<div class="item-card" data-appl-id="${a.id}">
+        <div class="item-card-name">${x(a.name)}</div>
+        ${sub ? `<div class="item-card-sub">${x(sub)}</div>` : ""}
+        ${warranty ? `<div class="item-card-sub">${x(warranty)}</div>` : ""}
+        ${chips.length ? `<div class="item-card-chips">${chips.join("")}</div>` : ""}
+      </div>`;
+    });
+  }
+  document.getElementById("appliances-body").innerHTML = html;
+  document.querySelectorAll(".item-card[data-appl-id]").forEach(c =>
+    c.addEventListener("click", () => openEditAppliance(c.dataset.applId)));
+  const emptyBtn = document.getElementById("empty-add-appl-btn");
+  if (emptyBtn) emptyBtn.addEventListener("click", openAddAppliance);
+  if (window.lucide) lucide.createIcons();
+}
+
+function openAddAppliance() {
+  editingApplianceId = null;
+  document.getElementById("add-appliance-title").textContent = "New Appliance";
+  document.getElementById("appl-name").value = "";
+  document.getElementById("appl-brand").value = "";
+  document.getElementById("appl-model").value = "";
+  document.getElementById("appl-serial").value = "";
+  document.getElementById("appl-purchase-date").value = "";
+  document.getElementById("appl-warranty-date").value = "";
+  document.getElementById("appl-manual-url").value = "";
+  document.getElementById("appl-notes").value = "";
+  document.getElementById("delete-appliance-btn").style.display = "none";
+  go("s-add-appliance");
+}
+
+function openEditAppliance(id) {
+  const d = ensureSettings(load());
+  const a = d.appliances.find(a => a.id === id);
+  if (!a) return;
+  editingApplianceId = id;
+  document.getElementById("add-appliance-title").textContent = "Edit Appliance";
+  document.getElementById("appl-name").value = a.name || "";
+  document.getElementById("appl-brand").value = a.brand || "";
+  document.getElementById("appl-model").value = a.model || "";
+  document.getElementById("appl-serial").value = a.serial || "";
+  document.getElementById("appl-purchase-date").value = a.purchaseDate || "";
+  document.getElementById("appl-warranty-date").value = a.warrantyDate || "";
+  document.getElementById("appl-manual-url").value = a.manualUrl || "";
+  document.getElementById("appl-notes").value = a.notes || "";
+  document.getElementById("delete-appliance-btn").style.display = "";
+  go("s-add-appliance");
+}
+
+document.getElementById("back-from-add-appliance").addEventListener("click", back);
+document.getElementById("save-appliance-btn").addEventListener("click", () => {
+  const name = document.getElementById("appl-name").value.trim();
+  if (!name) { toast("Appliance name is required"); return; }
+  const d = ensureSettings(load());
+  const appl = {
+    id: editingApplianceId || uid(),
+    homeId: currentHomeId,
+    roomId: currentRoomId,
+    name,
+    brand: document.getElementById("appl-brand").value.trim(),
+    model: document.getElementById("appl-model").value.trim(),
+    serial: document.getElementById("appl-serial").value.trim(),
+    purchaseDate: document.getElementById("appl-purchase-date").value,
+    warrantyDate: document.getElementById("appl-warranty-date").value,
+    manualUrl: document.getElementById("appl-manual-url").value.trim(),
+    notes: document.getElementById("appl-notes").value.trim(),
+  };
+  if (editingApplianceId) {
+    const idx = d.appliances.findIndex(a => a.id === editingApplianceId);
+    if (idx > -1) d.appliances[idx] = appl;
+  } else {
+    d.appliances.push(appl);
+  }
+  save(d); toast(editingApplianceId ? "Appliance updated" : "Appliance added");
+  navStack = navStack.filter(s => s !== "s-add-appliance");
+  currentRoomSegment = "appliances"; renderRoomSegment(); go("s-room");
+});
+document.getElementById("delete-appliance-btn").addEventListener("click", () => {
+  const id = editingApplianceId;
+  confirm("Delete appliance?", "This appliance will be permanently removed.", () => {
+    const d = ensureSettings(load());
+    d.appliances = d.appliances.filter(a => a.id !== id);
+    save(d); toast("Appliance deleted");
+    navStack = navStack.filter(s => s !== "s-add-appliance");
+    currentRoomSegment = "appliances"; renderRoomSegment(); go("s-room");
+  });
+});
+
+document.getElementById("btn-add-appliance").addEventListener("click", openAddAppliance);
 
 // ── Escape HTML ───────────────────────────────────────────────────────────────
 function x(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
