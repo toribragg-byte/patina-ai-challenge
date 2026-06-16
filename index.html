@@ -789,7 +789,7 @@ async function syncFromSupabase() {
   const d = newStore();
   d.homes = (homes || []).map(h => ({ id: h.id, address: h.address || "", nickname: h.name, type: h.type || "", photo: h.photo || "", shared: false }));
   d.rooms = (rooms || []).map(r => ({ id: r.id, homeId: r.home_id, name: r.name, type: r.type || "", photo: r.photo || "" }));
-  d.finishes = (finishes || []).map(f => ({ id: f.id, roomId: f.room_id, homeId: f.home_id, type: f.type || "", brand: f.brand || "", product: f.name, colorName: f.color_name, colorCode: f.color_code, name: f.name, sheen: f.sheen, url: f.url, retailer: f.retailer, notes: f.notes, archived: f.archived, material: f.material, sku: f.sku }));
+  d.finishes = (finishes || []).map(f => ({ id: f.id, roomId: f.room_id, homeId: f.home_id, type: f.type || "", brand: f.brand || "", product: f.product || "", colorName: f.color_name || "", colorCode: f.color_code || "", name: f.name || "", sheen: f.sheen || "", url: f.url || "", retailer: f.retailer || "", notes: f.notes || "", archived: f.archived || false, material: f.material || "", sku: f.sku || "", tileSize: f.tile_size || "", grout: f.grout || "", width: f.width || "", thickness: f.thickness || "", stock: f.stock || "unknown" }));
   d.maintenance = (maintenance || []).map(m => ({ id: m.id, homeId: m.home_id, roomId: m.room_id, desc: m.title, category: m.type, provider: m.provider, prodBrand: m.product, date: m.date, nextDate: m.next_date, notes: m.notes, attachment: m.attachment }));
   d.admins = (admins || []).map(a => ({ id: a.id, name: a.admin_name || "", email: a.admin_email }));
   d.shared = (shared || []).map(s => ({ id: s.id, name: s.shared_name || "", email: s.shared_email, homeId: s.home_id }));
@@ -836,11 +836,14 @@ async function syncToSupabase() {
       room_id: f.roomId || null,
       user_id: userId,
       name: f.name || f.product || f.colorName || f.brand || f.type || "Finish",
-      type: f.type || "", brand: f.brand || "",
+      type: f.type || "", brand: f.brand || "", product: f.product || "",
       color_name: f.colorName || "", color_code: f.colorCode || "",
-      url: f.url || "", retailer: f.retailer || "",
+      sheen: f.sheen || "", url: f.url || "", retailer: f.retailer || "",
       notes: f.notes || "", archived: f.archived || false,
-      material: f.material || "", sku: f.sku || ""
+      material: f.material || "", sku: f.sku || "",
+      tile_size: f.tileSize || "", grout: f.grout || "",
+      width: f.width || "", thickness: f.thickness || "",
+      stock: f.stock || "unknown"
     }))
     .filter(f => f.home_id);
 
