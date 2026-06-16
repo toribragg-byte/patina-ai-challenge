@@ -263,12 +263,6 @@
   /* Maintenance dashboard cards */
   .maint-empty { text-align: center; color: var(--text2); padding: 20px 0 4px; font-size: 14px; }
 
-  /* Upkeep filter bar */
-  .upkeep-filter-bar { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
-  .upkeep-filter-bar::-webkit-scrollbar { display: none; }
-  .upkeep-filter-chip { flex-shrink: 0; padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--bg3); background: var(--bg); font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; }
-  .upkeep-filter-chip.active { background: var(--sage); border-color: var(--sage); color: #fff; }
-
   /* Quick date buttons */
   .quick-date-btns { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
   .quick-date-btn { padding: 6px 12px; border-radius: 20px; border: 1.5px solid var(--bg3); background: var(--bg2); font-size: 13px; font-weight: 600; color: var(--text2); cursor: pointer; }
@@ -410,9 +404,6 @@
       </button>
       <span class="home-badge" id="header-home-badge-upkeep"></span>
       <button class="icon-btn" id="btn-add-maint-header" title="Add record"><i data-lucide="plus"></i></button>
-    </div>
-    <div class="upkeep-filter-bar" id="upkeep-filter-bar">
-      <button class="upkeep-filter-chip active" data-filter="All">All</button>
     </div>
     <div class="body" id="upkeep-body"></div>
   </div>
@@ -1479,7 +1470,7 @@ function roomIcon(t) {
   return `<i data-lucide="${name}"></i>`;
 }
 
-const CAT_ICONS = { Plumbing:"wrench", HVAC:"thermometer", Electrical:"zap", Roof:"house", Well:"droplets", Septic:"filter", Appliance:"microwave", General:"hammer", Custom:"clipboard-list" };
+const CAT_ICONS = { Plumbing:"wrench", HVAC:"thermometer", Electrical:"zap", Roof:"house", Well:"droplets", Septic:"filter", Filter:"filter", Appliance:"microwave", General:"hammer", Custom:"clipboard-list" };
 
 function sortedMaintForHome(d) {
   if (!d.maintenance) d.maintenance = [];
@@ -1576,22 +1567,6 @@ function renderRoomsScreen() {
 }
 
 // ── Upkeep tab ────────────────────────────────────────────────────────────────
-let _upkeepFilter = "All";
-
-function renderUpkeepFilter(records) {
-  const cats = ["All", ...Array.from(new Set(records.map(m => m.category).filter(Boolean)))];
-  const bar = document.getElementById("upkeep-filter-bar");
-  bar.innerHTML = cats.map(c =>
-    `<button class="upkeep-filter-chip${_upkeepFilter === c ? " active" : ""}" data-filter="${c}">${c}</button>`
-  ).join("");
-  bar.querySelectorAll(".upkeep-filter-chip").forEach(btn =>
-    btn.addEventListener("click", () => {
-      _upkeepFilter = btn.dataset.filter;
-      renderUpkeepTab();
-    })
-  );
-}
-
 function renderUpkeepTab() {
   updateHomeHeader();
   const d = load();
@@ -1599,8 +1574,7 @@ function renderUpkeepTab() {
   if (!h) { document.getElementById("upkeep-body").innerHTML = `<div class="maint-empty">No home selected.</div>`; return; }
 
   const allMaint = sortedMaintForHome(d);
-  renderUpkeepFilter(allMaint);
-  const filtered = _upkeepFilter === "All" ? allMaint : allMaint.filter(m => m.category === _upkeepFilter);
+  const filtered = allMaint;
   let html = "";
   if (!allMaint.length) {
     html = `
@@ -2371,7 +2345,7 @@ document.getElementById("add-person-cancel").addEventListener("click", closeAllS
 // Auth handles boot via onAuthStateChange
 
 // ── Maintenance Log ──────────────────────────────────────────────────────────
-const MAINT_CATS = ["Plumbing","HVAC","Electrical","Roof","Well","Septic","Appliance","General","Custom"];
+const MAINT_CATS = ["Plumbing","HVAC","Electrical","Roof","Well","Septic","Filter","Appliance","General","Custom"];
 function attachmentChip(att, maintId) {
   if (!att) return "";
   const icon = att.type === "pdf" ? "file-text" : "image";
