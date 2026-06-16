@@ -1219,8 +1219,13 @@ function deleteCurrentHome() {
   d.maintenance = (d.maintenance || []).filter(m => m.homeId !== id);
   if (d.homes.length) { d.activeHomeId = d.homes[0].id; currentHomeId = d.homes[0].id; }
   else { d.activeHomeId = null; currentHomeId = null; }
-  save(d);
-  if (_currentUser) _sb.from("homes").delete().eq("id", id).then(({error, status, statusText}) => { console.log("delete home", {error, status, statusText}); if(error) toast("Sync error: " + error.message); });
+  localStorage.setItem("myhouse2", JSON.stringify(d));
+  if (_currentUser) {
+    _sb.from("homes").delete().eq("id", id).then(({error}) => {
+      if (error) { toast("Sync error: " + error.message); return; }
+      syncToSupabase().catch(console.error);
+    });
+  }
   toast("Home removed");
   switchTab("s-rooms");
 }
@@ -1675,8 +1680,9 @@ function deleteRoom() {
   const d = load();
   d.rooms = d.rooms.filter(r => r.id !== id);
   d.finishes = d.finishes.filter(f => f.roomId !== id);
-  save(d); toast("Room deleted");
-  if (_currentUser) _sb.from("rooms").delete().eq("id", id).then(({error}) => { if(error) console.error("delete room error", error); });
+  localStorage.setItem("myhouse2", JSON.stringify(d));
+  if (_currentUser) _sb.from("rooms").delete().eq("id", id).then(({error}) => { if(error) console.error("delete room error", error); else syncToSupabase().catch(console.error); });
+  toast("Room deleted");
   navStack = navStack.filter(s => s !== "s-room");
   switchTab("s-decor");
 }
@@ -2066,8 +2072,10 @@ function saveFinish() {
 }
 
 function deleteFinish(id) {
-  const d=load(); d.finishes=d.finishes.filter(f=>f.id!==id); save(d); toast("Finish deleted"); renderFinishes();
-  if (_currentUser) _sb.from("finishes").delete().eq("id", id).then(({error}) => { if(error) console.error("delete finish error", error); });
+  const d=load(); d.finishes=d.finishes.filter(f=>f.id!==id);
+  localStorage.setItem("myhouse2", JSON.stringify(d));
+  if (_currentUser) _sb.from("finishes").delete().eq("id", id).then(({error}) => { if(error) console.error("delete finish error", error); else syncToSupabase().catch(console.error); });
+  toast("Finish deleted"); renderFinishes();
 }
 
 // ── Escape HTML ───────────────────────────────────────────────────────────────
@@ -2486,8 +2494,8 @@ document.getElementById("delete-maintenance-btn").addEventListener("click", () =
   const id = editingMaintId;
   const d = load();
   d.maintenance = (d.maintenance||[]).filter(m => m.id !== id);
-  save(d);
-  if (_currentUser) _sb.from("maintenance").delete().eq("id", id).then(({error}) => { if(error) console.error("delete maint error", error); });
+  localStorage.setItem("myhouse2", JSON.stringify(d));
+  if (_currentUser) _sb.from("maintenance").delete().eq("id", id).then(({error}) => { if(error) console.error("delete maint error", error); else syncToSupabase().catch(console.error); });
   toast("Record deleted");
   back();
 });
