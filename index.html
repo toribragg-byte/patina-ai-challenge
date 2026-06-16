@@ -291,6 +291,15 @@
   .eicon { display: flex; align-items: center; justify-content: center; }
   .empty p { font-size: 14px; line-height: 1.6; }
 
+  /* Empty states */
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 32px; text-align: center; gap: 10px; }
+  .empty-state-icon { width: 64px; height: 64px; border-radius: 20px; background: var(--bg2); display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+  .empty-state-icon svg.lucide { width: 28px; height: 28px; stroke-width: 1.5; color: var(--accent); opacity: .7; }
+  .empty-state-title { font-size: 17px; font-weight: 700; color: var(--text); }
+  .empty-state-sub { font-size: 14px; color: var(--text2); line-height: 1.5; max-width: 260px; }
+  .empty-state-btn { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 12px 20px; background: var(--accent); color: #fff; border: none; border-radius: var(--r-sm); font-size: 15px; font-weight: 600; cursor: pointer; }
+  .empty-state-btn svg.lucide { width: 16px; height: 16px; }
+
   /* Toast */
   .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--bg3); color: var(--text); padding: 10px 20px; border-radius: 999px; font-size: 14px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 200; white-space: nowrap; }
   .toast.show { opacity: 1; }
@@ -1549,7 +1558,13 @@ function renderUpkeepTab() {
   const allMaint = sortedMaintForHome(d);
   let html = "";
   if (!allMaint.length) {
-    html = `<div class="maint-empty">No upkeep records yet.<br>Tap + to add one.</div>`;
+    html = `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i data-lucide="wrench"></i></div>
+        <div class="empty-state-title">No upkeep records yet</div>
+        <div class="empty-state-sub">Track maintenance, repairs, and seasonal tasks so nothing slips through the cracks.</div>
+        <button class="empty-state-btn" id="empty-add-maint-btn"><i data-lucide="plus"></i> Add first record</button>
+      </div>`;
   } else {
     allMaint.forEach(m => {
       const diff = m.nextDate ? maintDiffDays(m.nextDate) : null;
@@ -1576,6 +1591,9 @@ function renderUpkeepTab() {
     });
   }
   document.getElementById("upkeep-body").innerHTML = html;
+  if (!allMaint.length) {
+    document.getElementById("empty-add-maint-btn").addEventListener("click", openAddMaintenance);
+  }
   document.querySelectorAll(".maint-card[data-maint]").forEach(c =>
     c.addEventListener("click", () => openEditMaintenance(c.dataset.maint)));
   if (window.lucide) lucide.createIcons();
@@ -1608,6 +1626,18 @@ function renderDecorTab() {
     </div>`;
   }
 
+  if (!rooms.length) {
+    document.getElementById("decor-body").innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon"><i data-lucide="paintbrush"></i></div>
+        <div class="empty-state-title">No rooms yet</div>
+        <div class="empty-state-sub">Add your rooms to start tracking paint colors, flooring, tile, and other finishes.</div>
+        <button class="empty-state-btn" id="empty-add-room-btn"><i data-lucide="plus"></i> Add first room</button>
+      </div>`;
+    if (window.lucide) lucide.createIcons();
+    document.getElementById("empty-add-room-btn").addEventListener("click", openAddRoom);
+    return;
+  }
   document.getElementById("decor-body").innerHTML = rooms.map(roomCardHtml).join("");
   document.querySelectorAll("#decor-body .room-card[data-room], #decor-body .room-card-photo[data-room]").forEach(c =>
     c.addEventListener("click", () => openRoom(c.dataset.room)));
