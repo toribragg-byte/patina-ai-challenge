@@ -1211,17 +1211,16 @@ document.getElementById("sheet-delete-home").addEventListener("click", () => {
 document.getElementById("home-menu-cancel").addEventListener("click", closeAllSheets);
 
 function deleteCurrentHome() {
+  const id = currentHomeId;
   const d = load();
-  d.homes = d.homes.filter(h => h.id !== currentHomeId);
-  d.rooms = d.rooms.filter(r => r.homeId !== currentHomeId);
-  d.finishes = d.finishes.filter(f => {
-    const room = d.rooms.find(r => r.id === f.roomId);
-    return room != null;
-  });
-  // Switch to first remaining home or prompt add
+  d.homes = d.homes.filter(h => h.id !== id);
+  d.rooms = d.rooms.filter(r => r.homeId !== id);
+  d.finishes = d.finishes.filter(f => f.homeId !== id);
+  d.maintenance = (d.maintenance || []).filter(m => m.homeId !== id);
   if (d.homes.length) { d.activeHomeId = d.homes[0].id; currentHomeId = d.homes[0].id; }
   else { d.activeHomeId = null; currentHomeId = null; }
   save(d);
+  if (_currentUser) _sb.from("homes").delete().eq("id", id).then(({error}) => { if(error) console.error("delete home error", error); });
   toast("Home removed");
   switchTab("s-rooms");
 }
@@ -1672,10 +1671,12 @@ document.getElementById("save-room-btn").addEventListener("click", saveRoom);
 document.getElementById("back-from-room").addEventListener("click", back);
 
 function deleteRoom() {
+  const id = currentRoomId;
   const d = load();
-  d.rooms = d.rooms.filter(r => r.id !== currentRoomId);
-  d.finishes = d.finishes.filter(f => f.roomId !== currentRoomId);
+  d.rooms = d.rooms.filter(r => r.id !== id);
+  d.finishes = d.finishes.filter(f => f.roomId !== id);
   save(d); toast("Room deleted");
+  if (_currentUser) _sb.from("rooms").delete().eq("id", id).then(({error}) => { if(error) console.error("delete room error", error); });
   navStack = navStack.filter(s => s !== "s-room");
   switchTab("s-decor");
 }
@@ -2066,6 +2067,7 @@ function saveFinish() {
 
 function deleteFinish(id) {
   const d=load(); d.finishes=d.finishes.filter(f=>f.id!==id); save(d); toast("Finish deleted"); renderFinishes();
+  if (_currentUser) _sb.from("finishes").delete().eq("id", id).then(({error}) => { if(error) console.error("delete finish error", error); });
 }
 
 // ── Escape HTML ───────────────────────────────────────────────────────────────
@@ -2249,8 +2251,8 @@ function openAddPerson(type) {
 }
 function removePerson(type, id) {
   const d = ensureSettings(load());
-  if (type === "admin")  d.admins = d.admins.filter(a => a.id !== id);
-  if (type === "shared") d.shared = d.shared.filter(s => s.id !== id);
+  if (type === "admin")  { d.admins = d.admins.filter(a => a.id !== id); if (_currentUser) _sb.from("home_admins").delete().eq("id", id).then(({error}) => { if(error) console.error(error); }); }
+  if (type === "shared") { d.shared = d.shared.filter(s => s.id !== id); if (_currentUser) _sb.from("home_shared").delete().eq("id", id).then(({error}) => { if(error) console.error(error); }); }
   save(d); renderSettingsTab();
 }
 document.getElementById("save-add-person-btn").addEventListener("click", () => {
@@ -2481,9 +2483,11 @@ document.getElementById("save-maintenance-btn").addEventListener("click", () => 
 });
 
 document.getElementById("delete-maintenance-btn").addEventListener("click", () => {
+  const id = editingMaintId;
   const d = load();
-  d.maintenance = (d.maintenance||[]).filter(m => m.id !== editingMaintId);
+  d.maintenance = (d.maintenance||[]).filter(m => m.id !== id);
   save(d);
+  if (_currentUser) _sb.from("maintenance").delete().eq("id", id).then(({error}) => { if(error) console.error("delete maint error", error); });
   toast("Record deleted");
   back();
 });
