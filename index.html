@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My House</title>
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg:      #FFFFFF;
@@ -19,6 +20,23 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Auth screen */
+  .auth-screen { display: none; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 24px; max-width: 480px; margin: 0 auto; }
+  .auth-screen.active { display: flex; }
+  .auth-logo { font-size: 28px; font-weight: 800; color: var(--accent); letter-spacing: -.5px; margin-bottom: 6px; }
+  .auth-tagline { font-size: 14px; color: var(--text2); margin-bottom: 40px; }
+  .auth-card { background: var(--bg2); border-radius: var(--r); padding: 24px; width: 100%; }
+  .auth-tabs { display: flex; gap: 0; margin-bottom: 24px; background: var(--bg3); border-radius: var(--r-sm); padding: 3px; }
+  .auth-tab { flex: 1; padding: 8px; border: none; border-radius: 8px; background: none; font-size: 14px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all .15s; }
+  .auth-tab.active { background: var(--bg); color: var(--text); }
+  .auth-field { margin-bottom: 14px; }
+  .auth-field label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  .auth-field input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--bg3); border-radius: var(--r-sm); background: var(--bg); font-size: 15px; color: var(--text); outline: none; }
+  .auth-field input:focus { border-color: var(--accent); }
+  .auth-submit { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: var(--r-sm); font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+  .auth-submit:active { opacity: .85; }
+  .auth-error { font-size: 13px; color: #B53A2F; text-align: center; margin-top: 10px; min-height: 18px; }
   .app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
   .screen { flex: 1; display: none; flex-direction: column; overflow: hidden; }
   .screen.active { display: flex; }
@@ -323,7 +341,31 @@
 </style>
 </head>
 <body>
-<div class="app">
+<!-- Auth screen -->
+<div class="auth-screen active" id="auth-screen">
+  <div class="auth-logo">patina</div>
+  <div class="auth-tagline">Your home, documented.</div>
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="auth-tab-login">Sign In</button>
+      <button class="auth-tab" id="auth-tab-signup">Create Account</button>
+    </div>
+    <div id="auth-login-form">
+      <div class="auth-field"><label>Email</label><input id="auth-email" type="email" placeholder="you@email.com" autocomplete="email"></div>
+      <div class="auth-field"><label>Password</label><input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="auth-submit" id="auth-login-btn">Sign In</button>
+    </div>
+    <div id="auth-signup-form" style="display:none">
+      <div class="auth-field"><label>Full Name</label><input id="auth-name" type="text" placeholder="Your name" autocomplete="name"></div>
+      <div class="auth-field"><label>Email</label><input id="auth-email-signup" type="email" placeholder="you@email.com" autocomplete="email"></div>
+      <div class="auth-field"><label>Password</label><input id="auth-password-signup" type="password" placeholder="Min. 6 characters" autocomplete="new-password"></div>
+      <button class="auth-submit" id="auth-signup-btn">Create Account</button>
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none">
 
   <!-- ── Rooms list ─────────────────────────── -->
   <div class="screen active" id="s-rooms">
@@ -705,12 +747,155 @@
 </div>
 
 <script>
+// ── Supabase ──────────────────────────────────────────────────────────────────
+const _sb = supabase.createClient(
+  "https://whotehmhtmagkidmqitl.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indob3RlaG1odG1hZ2tpZG1xaXRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MDEyODEsImV4cCI6MjA5NzE3NzI4MX0.rhr_03z0B085WjTiZv6bai9vZqt3G4M5ogXo4W7a-qg"
+);
+
+let _currentUser = null;
+
+// Pull all user data from Supabase into localStorage
+async function syncFromSupabase() {
+  const uid = _currentUser.id;
+  const [
+    { data: homes },
+    { data: rooms },
+    { data: finishes },
+    { data: maintenance },
+    { data: admins },
+    { data: shared },
+    { data: profile }
+  ] = await Promise.all([
+    _sb.from("homes").select("*").eq("user_id", uid),
+    _sb.from("rooms").select("*").eq("user_id", uid),
+    _sb.from("finishes").select("*").eq("user_id", uid),
+    _sb.from("maintenance").select("*").eq("user_id", uid),
+    _sb.from("home_admins").select("*").eq("owner_id", uid),
+    _sb.from("home_shared").select("*").eq("owner_id", uid),
+    _sb.from("profiles").select("*").eq("id", uid).single(),
+  ]);
+
+  // Map DB rows to local store format
+  const d = newStore();
+  d.homes = (homes || []).map(h => ({ id: h.id, address: h.address || "", nickname: h.name, type: h.type || "", photo: h.photo || "", shared: false }));
+  d.rooms = (rooms || []).map(r => ({ id: r.id, homeId: r.home_id, name: r.name, type: r.type || "", photo: r.photo || "" }));
+  d.finishes = (finishes || []).map(f => ({ id: f.id, roomId: f.room_id, homeId: f.home_id, type: f.type, brand: f.brand, product: f.color_name, colorName: f.color_name, colorCode: f.color_code, name: f.name, sheen: f.sheen, url: f.url, retailer: f.retailer, notes: f.notes, archived: f.archived, material: f.material, sku: f.sku }));
+  d.maintenance = (maintenance || []).map(m => ({ id: m.id, homeId: m.home_id, roomId: m.room_id, desc: m.title, category: m.type, provider: m.provider, prodBrand: m.product, date: m.date, nextDate: m.next_date, notes: m.notes, attachment: m.attachment }));
+  d.admins = (admins || []).map(a => ({ id: a.id, name: a.admin_name || "", email: a.admin_email }));
+  d.shared = (shared || []).map(s => ({ id: s.id, name: s.shared_name || "", email: s.shared_email, homeId: s.home_id }));
+  d.profile = { name: profile?.name || _currentUser.user_metadata?.name || "", email: _currentUser.email || "" };
+  if (d.homes.length) d.activeHomeId = d.homes[0].id;
+  save(d);
+}
+
+// Push local store to Supabase (upsert all)
+async function syncToSupabase() {
+  if (!_currentUser) return;
+  const uid = _currentUser.id;
+  const d = load();
+
+  const homes = d.homes.filter(h => !h.shared).map(h => ({ id: h.id, user_id: uid, name: h.nickname || h.address, address: h.address, type: h.type, photo: h.photo }));
+  const rooms = d.rooms.map(r => ({ id: r.id, home_id: r.homeId, user_id: uid, name: r.name, type: r.type, photo: r.photo }));
+  const finishes = d.finishes.map(f => ({ id: f.id, home_id: f.homeId || (d.rooms.find(r=>r.id===f.roomId)||{}).homeId, room_id: f.roomId, user_id: uid, name: f.name || f.product || f.colorName || f.type, type: f.type, brand: f.brand, color_name: f.colorName, color_code: f.colorCode, url: f.url, retailer: f.retailer, notes: f.notes, archived: f.archived || false, material: f.material, sku: f.sku }));
+  const maint = d.maintenance.map(m => ({ id: m.id, home_id: m.homeId, room_id: m.roomId || null, user_id: uid, title: m.desc, type: m.category, provider: m.provider, product: m.prodBrand, date: m.date, next_date: m.nextDate, notes: m.notes, attachment: m.attachment || null }));
+  const admins = d.admins.map(a => ({ id: a.id, owner_id: uid, home_id: d.homes[0]?.id || null, admin_name: a.name, admin_email: a.email }));
+  const shared = d.shared.map(s => ({ id: s.id, owner_id: uid, home_id: s.homeId, shared_name: s.name, shared_email: s.email }));
+
+  await Promise.all([
+    homes.length  ? _sb.from("homes").upsert(homes) : Promise.resolve(),
+    rooms.length  ? _sb.from("rooms").upsert(rooms) : Promise.resolve(),
+    finishes.length ? _sb.from("finishes").upsert(finishes.filter(f=>f.home_id)) : Promise.resolve(),
+    maint.length  ? _sb.from("maintenance").upsert(maint) : Promise.resolve(),
+    admins.length ? _sb.from("home_admins").upsert(admins) : Promise.resolve(),
+    shared.length ? _sb.from("home_shared").upsert(shared) : Promise.resolve(),
+    _sb.from("profiles").upsert({ id: uid, name: d.profile?.name || "" }),
+  ]);
+}
+
+// ── Auth UI ───────────────────────────────────────────────────────────────────
+function showAuth() {
+  document.getElementById("auth-screen").classList.add("active");
+  document.getElementById("app").style.display = "none";
+}
+function showApp() {
+  document.getElementById("auth-screen").classList.remove("active");
+  document.getElementById("app").style.display = "";
+}
+function setAuthError(msg) { document.getElementById("auth-error").textContent = msg || ""; }
+
+document.getElementById("auth-tab-login").addEventListener("click", () => {
+  document.getElementById("auth-tab-login").classList.add("active");
+  document.getElementById("auth-tab-signup").classList.remove("active");
+  document.getElementById("auth-login-form").style.display = "";
+  document.getElementById("auth-signup-form").style.display = "none";
+  setAuthError("");
+});
+document.getElementById("auth-tab-signup").addEventListener("click", () => {
+  document.getElementById("auth-tab-signup").classList.add("active");
+  document.getElementById("auth-tab-login").classList.remove("active");
+  document.getElementById("auth-signup-form").style.display = "";
+  document.getElementById("auth-login-form").style.display = "none";
+  setAuthError("");
+});
+
+document.getElementById("auth-login-btn").addEventListener("click", async () => {
+  const email = document.getElementById("auth-email").value.trim();
+  const password = document.getElementById("auth-password").value;
+  if (!email || !password) { setAuthError("Please enter your email and password."); return; }
+  const btn = document.getElementById("auth-login-btn");
+  btn.textContent = "Signing in…"; btn.disabled = true;
+  const { error } = await _sb.auth.signInWithPassword({ email, password });
+  btn.textContent = "Sign In"; btn.disabled = false;
+  if (error) { setAuthError(error.message); } else { setAuthError(""); }
+});
+
+document.getElementById("auth-signup-btn").addEventListener("click", async () => {
+  const name = document.getElementById("auth-name").value.trim();
+  const email = document.getElementById("auth-email-signup").value.trim();
+  const password = document.getElementById("auth-password-signup").value;
+  if (!email || !password) { setAuthError("Please enter your email and password."); return; }
+  if (password.length < 6) { setAuthError("Password must be at least 6 characters."); return; }
+  const btn = document.getElementById("auth-signup-btn");
+  btn.textContent = "Creating account…"; btn.disabled = true;
+  const { error } = await _sb.auth.signUp({ email, password, options: { data: { name } } });
+  btn.textContent = "Create Account"; btn.disabled = false;
+  if (error) { setAuthError(error.message); }
+  else { setAuthError(""); document.getElementById("auth-error").style.color = "var(--sage)"; document.getElementById("auth-error").textContent = "Check your email to confirm your account, then sign in."; }
+});
+
+// Listen for auth state changes
+_sb.auth.onAuthStateChange(async (event, session) => {
+  _currentUser = session?.user || null;
+  if (_currentUser) {
+    toast("Loading your homes…");
+    await syncFromSupabase();
+    const d = load();
+    if (d.homes.length) {
+      currentHomeId = d.activeHomeId || d.homes[0].id;
+      showApp();
+      switchTab("s-rooms");
+      if (window.lucide) lucide.createIcons();
+    } else {
+      showApp();
+      document.getElementById("back-from-add-home").style.display = "none";
+      go("s-add-home");
+      if (window.lucide) lucide.createIcons();
+    }
+  } else {
+    showAuth();
+  }
+});
+
 // ── Storage ───────────────────────────────────────────────────────────────────
 function load() {
   try { return JSON.parse(localStorage.getItem("myhouse2") || "null") || newStore(); }
   catch(e) { return newStore(); }
 }
-function save(d) { localStorage.setItem("myhouse2", JSON.stringify(d)); }
+function save(d) {
+  localStorage.setItem("myhouse2", JSON.stringify(d));
+  if (_currentUser) syncToSupabase().catch(console.error);
+}
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function newStore() { return { homes: [], rooms: [], finishes: [], maintenance: [], activeHomeId: null, profile: { name: "", email: "" }, admins: [], shared: [], prefs: { notifications: true, theme: "warm" } }; }
 function ensureSettings(d) {
@@ -1947,10 +2132,10 @@ function renderSettingsTab() {
   document.querySelectorAll("[data-remove-shared]").forEach(btn =>
     btn.addEventListener("click", e => { e.stopPropagation(); removePerson("shared", btn.dataset.removeShared); }));
 
-  // Sign out (prototype — just clears data)
   document.getElementById("btn-sign-out").addEventListener("click", () => {
-    confirm("Sign out?", "You'll be signed out of My House.", () => {
-      localStorage.clear(); location.reload();
+    confirm("Sign out?", "You'll be signed out of Patina.", async () => {
+      await _sb.auth.signOut();
+      localStorage.clear();
     }, "Sign Out");
   });
 
@@ -2016,25 +2201,7 @@ document.getElementById("save-add-person-btn").addEventListener("click", () => {
 });
 document.getElementById("add-person-cancel").addEventListener("click", closeAllSheets);
 
-// ── Boot ──────────────────────────────────────────────────────────────────────
-(function init() {
-  const d = load();
-  // Give any owned home without a photo a random one
-  let changed = false;
-  d.homes.forEach(h => { if (!h.photo && !h.shared) { h.photo = randomHousePhoto(); changed = true; } });
-  if (changed) save(d);
-  if (d.homes.length) {
-    currentHomeId = d.activeHomeId || d.homes[0].id;
-  } else {
-    // First launch — go straight to add home
-    document.getElementById("back-from-add-home").style.display = "none";
-    go("s-add-home");
-    if (window.lucide) lucide.createIcons();
-    return;
-  }
-  switchTab("s-rooms");
-  if (window.lucide) lucide.createIcons();
-})();
+// Auth handles boot via onAuthStateChange
 
 // ── Maintenance Log ──────────────────────────────────────────────────────────
 const MAINT_CATS = ["Plumbing","HVAC","Electrical","Roof","Well","Septic","Appliance","General","Custom"];
