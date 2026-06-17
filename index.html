@@ -468,9 +468,7 @@
       <button class="back-btn" aria-label="Back" id="back-from-room"><i data-lucide="chevron-left"></i></button>
       <span class="header-title" id="room-detail-name"></span>
       <button class="icon-btn" id="btn-room-menu"><i data-lucide="more-horizontal"></i></button>
-      <button class="icon-btn" id="btn-add-finish"><i data-lucide="plus"></i></button>
-      <button class="icon-btn" id="btn-add-item" style="display:none"><i data-lucide="plus"></i></button>
-      <button class="icon-btn" id="btn-add-appliance" style="display:none"><i data-lucide="plus"></i></button>
+      <button class="icon-btn" id="btn-add-room-item"><i data-lucide="plus"></i></button>
     </div>
     <div class="room-hero" id="room-hero">
       <div class="room-hero-placeholder" id="room-hero-placeholder"><i data-lucide="house"></i></div>
@@ -793,6 +791,19 @@
 </div>
 
 <!-- Room menu sheet -->
+<div class="overlay" id="room-add-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Add to room</div>
+    <button class="sheet-action" id="sheet-add-finish"><i data-lucide="paintbrush"></i> &nbsp;Finish</button>
+    <div class="sheet-divider"></div>
+    <button class="sheet-action" id="sheet-add-item"><i data-lucide="shopping-bag"></i> &nbsp;Item</button>
+    <div class="sheet-divider"></div>
+    <button class="sheet-action" id="sheet-add-appliance"><i data-lucide="microwave"></i> &nbsp;Appliance</button>
+    <button class="sheet-cancel" id="room-add-cancel">Cancel</button>
+  </div>
+</div>
+
 <div class="overlay" id="room-menu-sheet">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -1883,9 +1894,6 @@ function setRoomSegment(seg) {
   document.getElementById("items-body").style.display     = seg === "items"      ? "" : "none";
   document.getElementById("appliances-body").style.display = seg === "appliances" ? "" : "none";
   // Show/hide add buttons
-  document.getElementById("btn-add-finish").style.display    = seg === "finishes"   ? "" : "none";
-  document.getElementById("btn-add-item").style.display      = seg === "items"      ? "" : "none";
-  document.getElementById("btn-add-appliance").style.display = seg === "appliances" ? "" : "none";
   // Render the active section
   if (seg === "finishes")   renderFinishes();
   if (seg === "items")      renderItems();
@@ -2287,7 +2295,11 @@ function restoreFinish(id) {
   if (f) { delete f.archived; delete f.archivedAt; }
   save(d); toast("Finish restored"); renderRoomSegment();
 }
-document.getElementById("btn-add-finish").addEventListener("click", openAddFinish);
+document.getElementById("btn-add-room-item").addEventListener("click", () => showOverlay("room-add-sheet"));
+document.getElementById("room-add-cancel").addEventListener("click", () => hideOverlay("room-add-sheet"));
+document.getElementById("sheet-add-finish").addEventListener("click", () => { hideOverlay("room-add-sheet"); openAddFinish(); });
+document.getElementById("sheet-add-item").addEventListener("click", () => { hideOverlay("room-add-sheet"); openAddItem(); });
+document.getElementById("sheet-add-appliance").addEventListener("click", () => { hideOverlay("room-add-sheet"); openAddAppliance(); });
 document.getElementById("room-hero-cam").addEventListener("click", () => pickRoomPhoto(currentRoomId));
 document.getElementById("back-from-finish").addEventListener("click", back);
 document.getElementById("save-finish-btn").addEventListener("click", saveFinish);
@@ -2475,7 +2487,6 @@ document.getElementById("delete-item-btn").addEventListener("click", () => {
   });
 });
 
-document.getElementById("btn-add-item").addEventListener("click", openAddItem);
 
 // ── Appliances ────────────────────────────────────────────────────────────────
 function renderAppliances() {
@@ -2583,7 +2594,6 @@ document.getElementById("delete-appliance-btn").addEventListener("click", () => 
   });
 });
 
-document.getElementById("btn-add-appliance").addEventListener("click", openAddAppliance);
 
 // ── Escape HTML ───────────────────────────────────────────────────────────────
 function x(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
