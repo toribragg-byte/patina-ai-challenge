@@ -2295,11 +2295,11 @@ function restoreFinish(id) {
   if (f) { delete f.archived; delete f.archivedAt; }
   save(d); toast("Finish restored"); renderRoomSegment();
 }
-document.getElementById("btn-add-room-item").addEventListener("click", () => showOverlay("room-add-sheet"));
-document.getElementById("room-add-cancel").addEventListener("click", () => hideOverlay("room-add-sheet"));
-document.getElementById("sheet-add-finish").addEventListener("click", () => { hideOverlay("room-add-sheet"); openAddFinish(); });
-document.getElementById("sheet-add-item").addEventListener("click", () => { hideOverlay("room-add-sheet"); openAddItem(); });
-document.getElementById("sheet-add-appliance").addEventListener("click", () => { hideOverlay("room-add-sheet"); openAddAppliance(); });
+document.getElementById("btn-add-room-item").addEventListener("click", () => openSheet("room-add-sheet"));
+document.getElementById("room-add-cancel").addEventListener("click", () => closeAllSheets());
+document.getElementById("sheet-add-finish").addEventListener("click", () => { closeAllSheets(); openAddFinish(); });
+document.getElementById("sheet-add-item").addEventListener("click", () => { closeAllSheets(); openAddItem(); });
+document.getElementById("sheet-add-appliance").addEventListener("click", () => { closeAllSheets(); openAddAppliance(); });
 document.getElementById("room-hero-cam").addEventListener("click", () => pickRoomPhoto(currentRoomId));
 document.getElementById("back-from-finish").addEventListener("click", back);
 document.getElementById("save-finish-btn").addEventListener("click", saveFinish);
