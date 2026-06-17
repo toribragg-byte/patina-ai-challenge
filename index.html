@@ -344,10 +344,9 @@
   .room-card-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 48px; background: var(--bg3); }
   .room-card-photo:active { opacity: .85; }
   .room-card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .room-card-photo-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.7) 0%, rgba(0,0,0,.1) 50%, transparent 100%); }
-  .room-card-photo-label { position: absolute; bottom: 14px; left: 16px; right: 16px; display: flex; align-items: flex-end; justify-content: space-between; }
-  .room-card-photo-name { font-size: 17px; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.5); }
-  .room-card-photo-type { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 2px; }
+  .room-card-photo-label { position: absolute; bottom: 12px; left: 12px; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,.88); backdrop-filter: blur(8px); border-radius: 999px; padding: 6px 12px 6px 8px; max-width: calc(100% - 24px); }
+  .room-card-photo-name { font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .room-card-photo-type { font-size: 12px; color: var(--text2); }
 
   /* Room hero on detail screen */
   .room-hero { position: relative; height: 200px; background: var(--bg2); flex-shrink: 0; }
@@ -1828,10 +1827,9 @@ function renderDecorTab() {
       : `<div class="room-card-placeholder">${roomIcon(r.type)}</div>`;
     return `<div class="room-card-photo" data-room="${r.id}">
       ${inner}
-      <div class="room-card-photo-overlay"></div>
       <div class="room-card-photo-label">
-        <div><div class="room-card-photo-name">${x(r.name)}</div>${r.type?`<div class="room-card-photo-type">${x(r.type)}</div>`:""}</div>
-        <div style="color:rgba(255,255,255,.6);font-size:18px">›</div>
+        <span style="font-size:16px;line-height:1">${roomIcon(r.type)}</span>
+        <span class="room-card-photo-name">${x(r.name)}</span>
       </div>
     </div>`;
   }
