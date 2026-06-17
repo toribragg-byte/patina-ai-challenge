@@ -2141,7 +2141,12 @@ function renderFinishes() {
     });
   }
   if (!active.length && !archived.length) {
-    html=`<div class="empty"><div class="eicon"><i data-lucide="paintbrush"></i></div><p>No finishes yet.<br>Tap + to add paint, flooring, or any material.</p></div>`;
+    html=`<div class="empty-state">
+      <div class="empty-state-icon"><i data-lucide="paintbrush"></i></div>
+      <div class="empty-state-title">No finishes yet</div>
+      <div class="empty-state-sub">Track paint colors, flooring, tile, and any other materials in this room.</div>
+      <button class="empty-state-btn" onclick="openAddFinish()"><i data-lucide="plus"></i> Add first finish</button>
+    </div>`;
   }
 
   // Archive section
