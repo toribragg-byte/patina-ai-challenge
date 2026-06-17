@@ -307,12 +307,11 @@
   .empty-state-btn svg.lucide { width: 16px; height: 16px; }
 
   /* Add picker grid (room + button sheet) */
-  .add-picker-title { font-size: 18px; font-weight: 700; color: var(--text); padding: 4px 4px 16px; }
-  .add-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px; }
-  .add-picker-tile { background: var(--bg2); border: none; border-radius: var(--r); padding: 20px 12px 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--text); }
-  .add-picker-tile:active { background: var(--bg3); }
-  .add-picker-icon { width: 56px; height: 56px; border-radius: 50%; background: var(--text); display: flex; align-items: center; justify-content: center; color: #fff; }
-  .add-picker-icon svg.lucide { width: 24px; height: 24px; stroke-width: 1.75; }
+  .add-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 4px 16px 16px; }
+  .add-picker-tile { background: var(--bg3); border: none; border-radius: var(--r); padding: 24px 12px 20px; display: flex; flex-direction: column; align-items: center; gap: 14px; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--text); }
+  .add-picker-tile:active { opacity: .75; }
+  .add-picker-icon { width: 60px; height: 60px; border-radius: 50%; background: var(--text); display: flex; align-items: center; justify-content: center; color: #fff; }
+  .add-picker-icon svg.lucide { width: 26px; height: 26px; stroke-width: 1.75; }
 
   /* Toast */
   .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--bg3); color: var(--text); padding: 10px 20px; border-radius: 999px; font-size: 14px; font-weight: 500; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 200; white-space: nowrap; }
@@ -321,14 +320,15 @@
   /* Sheets */
   .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100; align-items: flex-end; justify-content: center; }
   .overlay.open { display: flex; }
-  .sheet { background: var(--bg2); border-radius: 20px 20px 0 0; padding: 12px 0 40px; width: 100%; max-width: 480px; }
-  .sheet-handle { width: 36px; height: 4px; background: var(--bg3); border-radius: 2px; margin: 0 auto 16px; }
-  .sheet-title { font-size: 13px; font-weight: 500; color: var(--text2); text-align: center; margin-bottom: 8px; padding: 0 20px; }
+  .sheet { background: var(--bg2); border-radius: 20px 20px 0 0; padding: 0 0 40px; width: 100%; max-width: 480px; }
+  .sheet-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px; }
+  .sheet-title { font-size: 16px; font-weight: 700; color: var(--text); flex: 1; }
+  .sheet-close { width: 32px; height: 32px; border-radius: 50%; background: var(--bg3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text2); flex-shrink: 0; }
+  .sheet-close svg.lucide { width: 16px; height: 16px; }
   .sheet-action { display: flex; align-items: center; gap: 14px; padding: 16px 20px; cursor: pointer; font-size: 17px; font-weight: 500; color: var(--text); border: none; background: none; width: 100%; text-align: left; }
   .sheet-action:active { background: var(--bg3); }
   .sheet-action.danger { color: #B53A2F; }
   .sheet-divider { height: 1px; background: var(--bg3); }
-  .sheet-cancel { display: block; margin: 8px 16px 0; width: calc(100% - 32px); padding: 16px; background: var(--bg3); border: none; border-radius: var(--r-sm); color: var(--text); font-size: 17px; font-weight: 600; cursor: pointer; text-align: center; }
 
   /* Home switcher sheet items */
   .home-option { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; border: none; background: none; width: 100%; text-align: left; }
@@ -777,32 +777,36 @@
 <!-- Home switcher sheet -->
 <div class="overlay" id="home-switcher-sheet">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">My Homes</div>
+    <div class="sheet-header">
+      <span class="sheet-title">My Homes</span>
+      <button class="sheet-close" id="home-switcher-cancel"><i data-lucide="x"></i></button>
+    </div>
     <div id="home-options-list"></div>
     <div class="sheet-divider" style="margin:4px 0"></div>
     <button class="sheet-action" id="btn-goto-add-home"><i data-lucide="plus"></i> &nbsp;Add a home</button>
-    <button class="sheet-cancel" id="home-switcher-cancel">Cancel</button>
   </div>
 </div>
 
 <!-- Home menu sheet -->
 <div class="overlay" id="home-menu-sheet">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title" id="home-menu-label"></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="home-menu-label"></span>
+      <button class="sheet-close" id="home-menu-cancel"><i data-lucide="x"></i></button>
+    </div>
     <button class="sheet-action" id="sheet-claim-home" style="display:none"><i data-lucide="copy"></i> &nbsp;Duplicate home</button>
     <div class="sheet-divider" id="sheet-claim-divider" style="display:none"></div>
     <button class="sheet-action danger" id="sheet-delete-home"><i data-lucide="trash-2"></i> &nbsp;Remove this home</button>
-    <button class="sheet-cancel" id="home-menu-cancel">Cancel</button>
   </div>
 </div>
 
-<!-- Room menu sheet -->
+<!-- Room add picker sheet -->
 <div class="overlay" id="room-add-sheet">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="add-picker-title" id="room-add-sheet-title">What would you like to add?</div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="room-add-sheet-title">What would you like to add?</span>
+      <button class="sheet-close" id="room-add-cancel"><i data-lucide="x"></i></button>
+    </div>
     <div class="add-picker-grid">
       <button class="add-picker-tile" id="sheet-add-finish">
         <div class="add-picker-icon"><i data-lucide="paintbrush"></i></div>
@@ -817,60 +821,64 @@
         <span>Appliance</span>
       </button>
     </div>
-    <button class="sheet-cancel" id="room-add-cancel">Cancel</button>
   </div>
 </div>
 
+<!-- Room menu sheet -->
 <div class="overlay" id="room-menu-sheet">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title" id="room-menu-title"></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="room-menu-title"></span>
+      <button class="sheet-close" id="room-menu-cancel"><i data-lucide="x"></i></button>
+    </div>
     <button class="sheet-action" id="sheet-change-photo"><i data-lucide="camera"></i> &nbsp;Change photo</button>
     <div class="sheet-divider"></div>
     <button class="sheet-action" id="sheet-edit-room"><i data-lucide="pencil"></i> &nbsp;Edit room</button>
     <div class="sheet-divider"></div>
     <button class="sheet-action danger" id="sheet-delete-room"><i data-lucide="trash-2"></i> &nbsp;Delete room</button>
-    <button class="sheet-cancel" id="room-menu-cancel">Cancel</button>
   </div>
 </div>
 
 <!-- Finish action sheet -->
 <div class="overlay" id="finish-action-sheet">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title" id="finish-action-title"></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="finish-action-title"></span>
+      <button class="sheet-close" id="finish-action-cancel"><i data-lucide="x"></i></button>
+    </div>
     <button class="sheet-action" id="sheet-edit-finish"><i data-lucide="pencil"></i> &nbsp;Edit finish</button>
     <div class="sheet-divider"></div>
     <button class="sheet-action" id="sheet-archive-finish"><i data-lucide="archive"></i> &nbsp;Archive finish</button>
     <div class="sheet-divider"></div>
     <button class="sheet-action danger" id="sheet-delete-finish"><i data-lucide="trash-2"></i> &nbsp;Delete finish</button>
-    <button class="sheet-cancel" id="finish-action-cancel">Cancel</button>
   </div>
 </div>
 
 <!-- Archived finish action sheet -->
 <div class="overlay" id="archived-action-sheet">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title" id="archived-action-title"></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="archived-action-title"></span>
+      <button class="sheet-close" id="archived-action-cancel"><i data-lucide="x"></i></button>
+    </div>
     <button class="sheet-action" id="sheet-restore-finish"><i data-lucide="rotate-ccw"></i> &nbsp;Restore finish</button>
     <div class="sheet-divider"></div>
     <button class="sheet-action danger" id="sheet-delete-archived"><i data-lucide="trash-2"></i> &nbsp;Delete permanently</button>
-    <button class="sheet-cancel" id="archived-action-cancel">Cancel</button>
   </div>
 </div>
 
 <!-- Confirm sheet -->
 <div class="overlay" id="confirm-sheet">
   <div class="sheet">
-    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="confirm-title"></span>
+      <button class="sheet-close" id="confirm-cancel"><i data-lucide="x"></i></button>
+    </div>
     <div class="confirm-body">
-      <h3 id="confirm-title"></h3>
       <p id="confirm-body-text"></p>
     </div>
     <div class="confirm-btns">
       <button class="btn btn-danger" id="confirm-ok">Delete</button>
-      <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -878,9 +886,11 @@
 <!-- Add person sheet -->
 <div class="overlay" id="add-person-sheet">
   <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title" id="add-person-title">Add Admin</div>
-    <div style="font-size:13px;color:var(--text2);line-height:1.4;padding:0 20px 12px;text-align:center" id="add-person-sub"></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="add-person-title">Add Admin</span>
+      <button class="sheet-close" id="add-person-cancel"><i data-lucide="x"></i></button>
+    </div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.4;padding:0 20px 12px" id="add-person-sub"></div>
     <div style="padding:0 16px;display:flex;flex-direction:column;gap:12px">
       <div class="field" id="add-person-home" style="display:none;margin:0">
         <label>Home</label>
@@ -890,7 +900,6 @@
       <input id="add-person-email" type="email" placeholder="Email address" style="width:100%;padding:12px 14px;border:1.5px solid var(--bg3);border-radius:var(--r-sm);background:var(--bg2);font-size:15px;color:var(--text);box-sizing:border-box">
     </div>
     <div style="padding:12px 16px 0"><button class="btn btn-primary" id="save-add-person-btn">Add</button></div>
-    <button class="sheet-cancel" id="add-person-cancel">Cancel</button>
   </div>
 </div>
 
